@@ -1,0 +1,302 @@
+<section class="cart cart-page{% unless cart.item_count != 0 %} empty{% endunless %}" data-cart-view="data-cart-view">
+
+<h1 class="h1 gs-title">{{ 'cart.cart' | t }}</h1>
+
+<form id="cart-form" action="{{ routes.cart_url }}" method="post" novalidate>
+{%- comment -%} Items {%- endcomment -%}
+<div class="items">
+
+{%- comment -%} JavaScript {%- endcomment -%}
+    <div class="no-js-hidden">
+        <div rv-show="cart.item_count | gt 0">
+            <x-grid class="header large-only" columns="6" style="gap:var(--margin)">
+                <x-cell span="1+3">{{ 'cart.product' | t }}</x-cell>
+                <x-cell span="4+2" js="center">{{ 'cart.price' | t }}</x-cell>
+                <x-cell class="large-only text-center">{{ 'cart.quantity' | t }}</x-cell>
+            </x-grid>
+
+            <x-grid class="item" columns="6" rv-each-item="cart.items">
+    {%- comment -%} Image {%- endcomment -%}
+                <x-cell class="image" span-s="1-2" rv-show="item.image">
+                    <img rv-src="item.image | product_image_size '500x500'" width="150" height="150" loading="lazy" alt="Product image">
+                </x-cell>
+    {%- comment -%} Name {%- endcomment -%}
+                <x-cell class="name" as="center" span="2+2" span-s="3+2">
+                    {%- comment -%} Vendor - link to vendor page avaiable @ the moment. {%- endcomment -%}
+                    {%- if settings.showItemVendor -%}<div class="vendor"><span rv-text="item.vendor"></span></div>{%- endif -%}
+                    {%- comment -%} Name {%- endcomment -%}
+                    <a rv-href="item.url | escape" class="no-style">
+                        <span class="name" rv-text="item.title | escape"></span>
+                    </a>
+                    {%- comment -%} Custom property {%- endcomment -%}
+                    <ul rv-hide="item.propertyArray | empty">
+                        <li rv-each-property="item.propertyArray < properties">
+                            <small rv-text="property.name" class="smaller"></small>: 
+                            <small rv-text="property.value" class="smaller"></small>
+                        </li>
+                    </ul>
+                    {%- comment -%} Selling plan allocation {%- endcomment -%}
+                    <p class="selling-plan"><small rv-text="item.selling_plan_allocation.selling_plan.name" class="smaller"></small></p>
+                </x-cell>
+    {%- comment -%} Price {%- endcomment -%}
+                <x-cell as="center" js="center" span="4+2" span-s="5+2">
+                {%- comment -%} Price {%- endcomment -%}
+                <div rv-unless="item.original_line_price | eq item.final_line_price">
+                    <s class="old-price">
+                        <small rv-text="item.original_line_price | money"></small>
+                    </s>
+                    <span rv-text="item.final_line_price | money"></span>
+                </div>
+
+                <div rv-if="item.original_line_price | eq item.final_line_price">
+                    <span class="price" rv-html="item.original_line_price | money"></span>
+                </div>
+
+                {%- comment -%} Unit price measurement {%- endcomment -%}
+                <div rv-if="item.unit_price_measurement">
+                <small class="unit-price smaller">
+                    <span rv-text="item.unit_price | money"></span>
+                    <span aria-hidden="true">/</span>
+                    <span rv-unless="item.unit_price_measurement.reference_value | eq 1" rv-text="item.unit_price_measurement.reference_value"></span>
+                    <span rv-text="item.unit_price_measurement.reference_unit"></span>
+                </small>
+                </div>
+
+                {%- comment -%} Line discount {%- endcomment -%}
+                <ul rv-each-discount="item.discounts" class="no-style">
+                    <li>
+                        <small class="smaller">
+                            <span>{%- render 'global-icon' with 'tag' -%}</span>
+                            <span rv-text="discount.title" class="smaller"></span>
+                        </small>
+                    </li>
+                </ul>
+                </x-cell>
+    {% comment %} QTY & Remove {% endcomment %}
+                <x-cell span-s="3.." as="center" style="padding:0">
+                <x-flex ai="center" jc="center" wrap="wrap" style="gap:0 1rem">
+                    {% comment %} QTY {% endcomment %}
+                    <x-cell as="center">
+                    <x-flex ai="center" jc="around" style="gap:.5rem 1rem">
+                        <x-cell><button class="is-blank minus" rv-data-cart-update="index | plus 1" rv-data-cart-quantity="item.quantity | minus 1">{% render 'global-icon' with 'minus' %}</button></x-cell>
+                        <x-cell><span class="qtyinput" rv-html="item.quantity"></span></x-cell>
+                        <x-cell><button class="is-blank plus" rv-data-cart-update="index | plus 1" rv-data-cart-quantity="item.quantity | plus 1">{% render 'global-icon' with 'plus' %}</button></x-cell>
+                    </x-flex>
+                    </x-cell>
+                    {% comment %} Remove {% endcomment %}
+                    <x-cell>
+                    <button class="is-blank">
+                        <span class="times remove" rv-data-cart-remove="index | plus 1">{% render 'global-icon' with 'trash' %}</span>
+                    </button> 
+                    </x-cell>
+                </x-flex>
+                </x-cell>
+            </x-grid>
+        </div>
+        {% comment %} If cart is empty {% endcomment %}
+        <div class="empty" rv-show="cart.item_count | lt 1">
+            <div>
+                <h1>{{ 'cart.empty' | t }}</h1>
+                <p><a href="{{ routes.all_products_collection_url }}" class="button is-blank">{{ 'cart.continue_shopping' | t }}</a></p>
+            </div>
+        </div>
+    </div>
+
+{%- comment -%} No JavaScript {%- endcomment -%}
+<noscript>
+<div class="no-js">
+    {%- if cart.item_count != 0 -%}
+        <x-grid class="header large-only" columns="6" style="gap:var(--margin)">
+            <x-cell span="1+3">{{ 'cart.product' | t }}</x-cell>
+            <x-cell span="4+2">{{ 'cart.price' | t }}</x-cell>
+            <x-cell>{{ 'cart.quantity' | t }}</x-cell>
+        </x-grid>
+
+        {%- for item in cart.items -%}
+        <x-grid class="item" ai="center" columns="6" style="gap:var(--padding)">
+    {%- comment -%} Image {%- endcomment -%}
+            {%- if item.image -%}
+            <x-cell class="image"><img src="{{ item.image | image_url: width: 400, height: 400, crop: 'center' }}" loading="lazy" width="150" height="150" alt="{{ item.product.title | escape }}"></x-cell>
+            {%- endif -%}
+    {%- comment -%} Name {%- endcomment -%}
+            <x-cell class="name" span="2+2" as="center">
+                {%- if settings.showItemVendor == true -%}<div class="vendor"><span>{{ item.vendor }}</span></div>{%- endif -%}
+                <span class="name"><a href="{{ item.url }}" class="no-style">{{ item.product.title | escape }}</a></span>
+                {%- comment -%} Custom property {%- endcomment -%}
+                {%- if item.product.has_only_default_variant == false or item.properties.size != 0 or item.selling_plan_allocation != nil -%}
+                      <dl>
+                        {%- if item.product.has_only_default_variant == false -%}
+                          {%- for option in item.options_with_values -%}
+                            <div class="product-option">
+                              <dt>{{ option.name }}:&nbsp;</dt>
+                              <dd>{{ option.value }}</dd>
+                            </div>
+                          {%- endfor -%}
+                        {%- endif -%}
+
+                        {%- for property in item.properties -%}
+                          {%- assign property_first_char = property.first | slice: 0 -%}
+                          {%- if property.last != blank and property_first_char != '_' -%}
+                            <div class="product-option">
+                              <dt>{{ property.first }}: </dt>
+                              <dd>
+                                {%- if property.last contains '/uploads/' -%}
+                                  <a href="{{ property.last }}" target="_blank">
+                                    {{ property.last | split: '/' | last }}
+                                  </a>
+                                {%- else -%}
+                                  {{ property.last }}
+                                {%- endif -%}
+                              </dd>
+                            </div>
+                          {%- endif -%}
+                        {%- endfor -%}
+                      </dl>
+                      {%- comment -%} Selling plan allocation {%- endcomment -%}
+                      <p class="selling-plan smaller">{{ item.selling_plan_allocation.selling_plan.name }}</p>
+                {%- endif -%}
+            </x-cell>
+    {%- comment -%} Price {%- endcomment -%}
+            <x-cell class="text-center" as="center" span="4+2">
+            {%- comment -%} Price {%- endcomment -%}
+            {%- if item.original_line_price != item.final_line_price -%}
+                <s class="old-price"><small>{{ item.original_line_price | money }}</small></s>
+                <span>{{ item.final_line_price | money }}</span>
+            {%- else -%}
+                <span class="price">{{ item.original_line_price | money }}</span>
+            {%- endif -%}
+            {%- comment -%} Unit price measurement {%- endcomment -%}
+            {%- if item.variant.available and item.unit_price_measurement -%}
+            <div>
+            <small class="unit-price smaller">
+                {{ item.variant.unit_price | money }}
+                <span aria-hidden="true">/</span>
+                {%- if item.variant.unit_price_measurement.reference_value != 1 -%}
+                    {{- item.variant.unit_price_measurement.reference_value -}}
+                {%- endif -%}
+                    {{ item.variant.unit_price_measurement.reference_unit }}
+            </small>
+            </div>
+            {%- endif -%}
+            {%- comment -%} Line discount {%- endcomment -%}
+            {%- if item.discounts != nil -%}
+            <ul class="no-style">
+            {%- for discount in item.discounts -%}
+                <li>
+                    <small class="smaller">
+                        <span>{%- render 'global-icon' with 'tag' -%}</span>
+                        <span>{{ discount.title }}</span>
+                    </small>
+                </li>
+            {%- endfor -%}
+            </ul>
+            {%- endif -%}
+            </x-cell>
+    {% comment %} QTY & Remove {% endcomment %}
+            <x-cell as="center">
+                <x-flex direction-s="column" ac="between" wrap="wrap">
+                    {% comment %} QTY {% endcomment %}
+                    <x-cell>
+                        <label for="Quantity-{{ item.index | plus: 1 }}" class="visually-hidden">{{ 'cart.quantity' | t }}</label>
+                        <input class="input-number" type="number" inputmode="decimal" name="updates[]" min="0" id="Quantity-{{ item.index | plus: 1 }}" value="{{ item.quantity }}" form="cart-form">
+                        <button type="submit" name="update" class="is-small is-link">{{ 'cart.update_quantity' | t }}</button>
+                    </x-cell>
+                    {% comment %} Remove {% endcomment %}
+                    <x-cell>
+                        <a href="{{ item.url_to_remove }}" class="button is-blank fullwidth text-center"><span class="times remove">{% render 'global-icon' with 'trash' %}</span></a>
+                    </x-cell>
+                </x-flex>
+            </x-cell>
+        </x-grid>
+        {%- endfor -%}
+
+    {%- else -%}
+        <div class="empty">
+            <div>
+                <h1>{{ 'cart.empty' | t }}</h1>
+                <p><a href="{{ routes.all_products_collection_url }}" class="button is-blank">{{ 'cart.continue_shopping' | t }}</a></p>
+            </div>
+        </div>
+    {%- endif -%}
+</div>
+</noscript>
+{%- comment -%} / No JavaScript {%- endcomment -%}
+</div>
+
+{%- comment -%} Footer {%- endcomment -%}
+<div class="cart-footer" rv-show="cart.item_count | gt 0">
+
+        <x-grid columns="2" columns-s="1" style="gap:var(--padding)">
+            <x-cell class="discountNotes">
+            {%- comment -%} Cart notes {%- endcomment -%}
+            {%- if section.settings.cartNoteBoxShow -%}
+                <div class="discountBox">
+                    <label for="cartNote">{{ 'cart.notePlaceholder' | t }}</label>
+                    <textarea class="fullwidth" name="note" id="cartNote" placeholder="{{ 'cart.notePlaceholder' | t }}" data-cart-notes>{{ cart.note }}</textarea>
+                </div>
+            {%- endif -%}
+            </x-cell>
+
+            <x-cell class="actions" js="end">
+                {%- comment -%} Subtotal {%- endcomment -%}
+                <x-flex jc="between" class="subtotal">
+                    <x-cell>{{ 'cart.subtotal' | t }}:</x-cell> 
+                    <x-cell>
+                        <strong rv-html="cart.total_price | money Currency.currentCurrency" class="no-js-hidden"></strong>
+                        <strong class="no-js">{{ cart.total_price | money_with_currency }}</strong>
+                    </x-cell>
+                </x-flex>
+                {%- comment -%} Cart level discount {%- endcomment -%}
+                <p>
+                  {%- if cart.cart_level_discount_applications.size > 0 -%}
+                    <ul class="no-style" role="list">
+                      {%- for discount in cart.cart_level_discount_applications -%}
+                        <li class="text-end">
+                          {{ discount.title }}
+                          (-{{ discount.total_allocated_amount | money }})
+                        </li>
+                      {%- endfor -%}
+                    </ul>
+                  {%- endif -%}
+                </p>
+                {%- comment -%} Checkout Button {%- endcomment -%}
+                <div>
+                    <button id="thecheckoutbutton" type="submit" class="is-primary" name="checkout"{% if cart == empty %} disabled{% endif %}>{{ 'cart.checkout' | t }} &rarr;</button>
+                </div>
+                {%- comment -%} Quick buy Button {%- endcomment -%}
+                {%- if additional_checkout_buttons -%}
+                <div class="additional-checkout-buttons no-js-hidden">
+                  {{ content_for_additional_checkout_buttons }}
+                </div>
+                {%- endif -%}
+                {%- comment -%} Tax notes {%- endcomment -%}
+                <p class="text-center-s"><small>
+                  {%- if cart.taxes_included and shop.shipping_policy.body != blank -%}
+                    {{ 'cart.taxes_included_and_shipping_policy_html' | t: link: shop.shipping_policy.url }}
+                  {%- elsif cart.taxes_included -%}
+                    {{ 'cart.taxes_included_but_shipping_at_checkout' | t }}
+                  {%- elsif shop.shipping_policy.body != blank -%}
+                    {{ 'cart.taxes_and_shipping_policy_at_checkout_html' | t: link: shop.shipping_policy.url }}
+                  {%- else -%}
+                    {{ 'cart.taxes_and_shipping_at_checkout' | t }}
+                  {%- endif -%}
+                </small></p>
+            </x-cell>
+        </x-grid>
+</div>
+</form>
+</section>
+
+{% schema %}
+{
+  "name": "Cart page",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "cartNoteBoxShow",
+      "label": "Enable cart notes",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,10 @@
+<a href="#app" class="button is-blank is-currentcolor no-js">{{ 'footer.backToTop' | t }}</a>
+<button class="is-blank is-currentcolor no-js-hidden" onclick="window.scrollTo({top: 0, behavior: 'smooth' })">{{ 'footer.backToTop' | t }}</button>
+
+{% schema %}
+{
+    "name": "Back-to-top button",
+    "class": "bouncebackup",
+    "enabled_on": { "groups": ["footer"] }
+}
+{% endschema %}

@@ -1,0 +1,155 @@
+{%- liquid
+    for block in section.blocks
+    if forloop.first == true
+        assign blockNumb = forloop.length
+    endif
+    endfor
+
+    # Used for image sizes
+    assign vw = 100 | divided_by: section.settings.perRow | append: 'vw'
+    assign vw_s = 100 | divided_by: section.settings.perRowMob | append: 'vw'
+-%}
+
+<section class="hero-double blox-{{ blockNumb }}">
+    <x-grid columns="{{ section.settings.perRow }}" columns-s="{{ section.settings.perRowMob }}">
+        {%- for block in section.blocks -%}
+        <x-cell {{ block.shopify_attributes }}>
+            {% if block.settings.url != blank %}<a href="{{ block.settings.url }}" class="no-style">{% endif %}
+
+            {%- if block.settings.title -%}
+            <x-flex class="contents" pi="{{ block.settings.contentPosition }}">
+                <x-cell>
+                    <h3 class="title{% if block.settings.heroHasBg == true %} hasBg{% endif %}" style="--heroMetaH1Bg:{{ block.settings.heroBg }};color:{{ block.settings.heroColor }}">{{ block.settings.title }}</h3>
+                </x-cell>
+            </x-flex>
+			{%- endif -%}
+
+			<picture>
+            {%- capture sizes -%}(max-width:777px) {{ vw_s }}, (min-width:778px) {{ vw }}, 100vw{%- endcapture -%}
+			{%- liquid 
+                assign img = block.settings.image
+                assign widths = '450,550,750,950,1100,1280'
+
+                if img != nil
+                    render 'global-img' for block as block, img: img, alt: block.settings.title, lazyload: block.settings.lazyload, sizes: sizes, widths: widths
+                else
+				    echo 'collection-2' | placeholder_svg_tag: 'svg-placeholder banner'
+                endif 
+            -%}
+		 	</picture>
+		 	{%- if block.settings.url != blank -%}</a>{%- endif -%}
+	 	</x-cell>
+		{%- endfor -%}
+	</x-grid>
+</section>
+
+{% schema %}
+{
+  "name": "Hero multicolumn",
+  "disabled_on": { "groups": ["header", "footer", "aside"] },
+  "max_blocks": 6,
+  "presets": [
+    {
+      "name": "Hero multicolumn",
+      "category": "Image",
+      "blocks": [
+        { "type": "image" },
+        { "type": "image" }
+      ]
+    }
+  ],
+  "settings": [
+    {
+        "type": "select",
+        "id": "perRow",
+        "label": "Banners per row - desktop",
+        "default": "2",
+        "options": [
+            { "value": "2", "label": "Two" },
+            { "value": "3", "label": "Three" }
+        ]
+    },
+    {
+        "type": "select",
+        "id": "perRowMob",
+        "label": "Banners per row - mobile",
+        "default": "1",
+        "options": [
+            { "value": "1", "label": "One" },
+            { "value": "2", "label": "Two" }
+        ]
+    }
+  ],
+  "blocks": [
+    {
+      "name": "Banner",
+      "type": "image",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image",
+          "info": "800 x 1422px recommended"
+        },
+        {
+            "type": "checkbox",
+            "id": "lazyload",
+            "label": "Enable lazy-loading",
+            "default": true,
+            "info": "Disable only in case this section is above the fold."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Heading",
+          "default": "Your hero heading"
+        },
+        {
+          "type": "url",
+          "id": "url",
+          "label": "Heading link"
+        },
+        {
+          "type": "select",
+          "id": "contentPosition",
+          "label": "Content position",
+          "default": "top left",
+          "options": [
+            { "value": "top left", "label": "Top left" },
+            { "value": "top center", "label": "Top center" },
+            { "value": "top right", "label": "Top right" },
+            { "value": "center left", "label": "Middle left" },
+            { "value": "center", "label": "Middle center" },
+            { "value": "center right", "label": "Middle right" },
+            { "value": "bottom left", "label": "Bottom left" },
+            { "value": "bottom center", "label": "Bottom center" },
+            { "value": "bottom right", "label": "Bottom right" }
+          ]
+        },
+        {
+          "type": "header",
+          "content": "Appearance"
+        },
+        {
+          "type": "color",
+          "id": "heroColor",
+          "label": "Heading text color",
+          "default": "#000000"
+        },
+        {
+          "type": "color",
+          "id": "heroBg",
+          "label": "Heading background color",
+          "default": "#FFFFFF"
+        },
+        {
+          "type": "checkbox",
+          "id": "heroHasBg",
+          "label": "Enable heading background",
+          "default": false
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

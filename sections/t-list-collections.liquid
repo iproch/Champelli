@@ -1,0 +1,86 @@
+{%- assign prodXpage = section.settings.prodXpage -%}
+{%- paginate collections by prodXpage -%}
+<div class="listing-page">
+<div class="brands">
+<section class="product">
+<x-grid id="ajaxSection" columns="3" columns-s="1">
+{% for collection in collections %}
+	<x-cell span="row">
+	<a href="{{ collection.url }}" title="{{ collection.title | escape }}" class="no-style">
+	<x-grid columns="3" columns-s="2" class="brand">
+		<x-cell class="center-axyz">
+			<picture>
+            {%- liquid 
+                if collection.image
+                    assign img = collection.image
+                else 
+                    assign img = collection.products.first.featured_media.preview_image
+                endif
+            -%}
+	        {%- if img != nil -%}
+	            <img src="{{ img.src | collection_img_url: 'large' }}" alt="{{ collection.title | escape }}" width="{{ img.width }}" height="{{ img.height }}" loading="lazy">
+	        {%- endif -%}
+			</picture>
+		</x-cell>
+		<x-cell class="center-axyz" class="text-center"><h2>{{ collection.title | escape }}</h2></x-cell>
+		<x-cell class="large-only center-axyz"><div>&rarr;</div></x-cell>
+	</x-grid>
+	</a>
+	</x-cell>
+{% endfor %}
+</x-grid>
+</section>
+    {%- comment -%} Pagination {%- endcomment -%}
+    {%- render 'global-pagination', paginate: paginate, section: section -%}
+</div>
+</div>
+{%- if section.settings.pagination != 'classic' -%}
+<script type="module">
+import { InfiniScroll } from '{{ 'infiniscroll.min.js' | asset_url }}';
+
+InfiniScroll({
+    itemsContainerSelector: '#ajaxSection',
+    paginationContainerSelector: '#ajaxPagination',
+    loadingText: '{{ 'collection.loading' | t }}',
+    debug: false,
+}).start();
+</script>
+{%- endif -%}
+{%- endpaginate -%}
+
+{% schema %}
+{
+  "name": "Collection list",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Pagination"
+    },
+    {
+      "type": "select",
+      "id": "pagination",
+      "label": "Type",
+      "default": "classic",
+      "options": [
+        {
+          "value": "classic",
+          "label": "Numbers"
+        },
+        {
+          "value": "scroll",
+          "label": "Load on scroll"
+        }
+      ]
+    },
+    {
+      "type": "range",
+      "label": "Collections per page",
+      "id": "prodXpage",
+      "min": 3,
+      "max": 30,
+      "step": 3,
+      "default": 9
+    }
+  ]
+}
+{% endschema %}

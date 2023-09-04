@@ -1,0 +1,125 @@
+{% comment %}
+    Renders filtering and sorting
+
+    Accepts:
+    - results: {Object} 'collection' or 'search' object
+
+    Usage:
+    {%- render 'global-filters', results: collection -%}
+{% endcomment %}
+
+{%- liquid
+  assign sort_by = results.sort_by | default: results.default_sort_by
+  assign total_active_values = 0
+  if results.url
+    assign results_url = results.url
+  else 
+    assign terms = results.terms | escape
+    assign results_url = '?q=' | append: terms | append: '&options%5Bprefix%5D=last&sort_by=' | append: sort_by
+  endif
+-%}
+
+<details class="filter closex">
+<summary class="dropdown-caret">{{ 'collection.filters' | t }}</summary>
+<form id="FacetFiltersFormMobile">
+
+    <details data-index="mobile-{{ forloop.index }}" open>
+        <summary class="dropdown-caret">{{ 'collection.sortBy' | t }}</summary>
+        <div class="sortByBlock">
+            <select name="sort_by" id="sort_by">
+            {%- for option in results.sort_options -%}
+                <option value="{{ option.value | escape }}"{% if option.value == sort_by %} selected="selected"{% endif %}>{{ option.name | escape }}</option>
+            {%- endfor -%}
+            </select>
+        </div>
+    </details>
+
+{%- for filter in results.filters -%}
+{% case filter.type %}
+{% when 'boolean' or 'list' %}
+    <details class="closex" data-index="mobile-{{ forloop.index }}">
+        <summary class="dropdown-caret">{{ filter.label | escape }}</summary>
+        <div class="filter-container">
+            <ul class="no-style">
+            {%- for value in filter.values -%}
+                <li>
+                    <input 
+                        type="checkbox"
+                        name="{{ value.param_name }}"
+                        value="{{ value.value }}"
+                        id="Filter-{{ filter.label | escape }}-mobile-{{ forloop.index }}"
+                        {% if value.active %}checked{% endif %}
+                        {% if value.count == 0 and value.active == false %}disabled{% endif %}
+                    >
+                    <label for="Filter-{{ filter.label | escape }}-mobile-{{ forloop.index }}">{{ value.label | escape }} ({{ value.count }})</label>
+                </li>
+            {%- endfor -%}
+            </ul>
+        </div>
+    </details>
+
+{% when 'price_range' %}
+
+    <details class="closex" data-index="mobile-{{ forloop.index }}">
+        <summary class="dropdown-caret">{{ filter.label | escape }}</summary>
+        <div>
+            <x-grid columns="2" class="price-range">
+            <x-cell class="price-range-from">
+                <label for="Mobile-Filter-{{ filter.label | escape }}-GTE">{{ 'search.from' | t }}</label>
+                <span>{{ cart.currency.symbol }}</span>
+                <input
+                    name="{{ filter.min_value.param_name }}"
+                    id="Mobile-Filter-{{ filter.label | escape }}-GTE"
+                    {%- if filter.min_value.value -%}
+                        {%- if uses_comma_decimals -%}value="{{ filter.min_value.value | money_without_currency | replace: '.', '' | replace: ',', '.' }}"{%- else -%}value="{{ filter.min_value.value | money_without_currency | replace: ',', '' }}"{% endif %}
+                    {%- endif -%}
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    inputmode="decimal"
+                    {%- if uses_comma_decimals -%}max="{{ filter.range_max | money_without_currency | replace: '.', '' | replace: ',', '.' }}"{%- else -%}max="{{ filter.range_max | money_without_currency | replace: ',', '' }}"{% endif %}
+                >
+            </x-cell>
+            <x-cell class="price-range-to">
+                <label for="Mobile-Filter-{{ filter.label | escape }}-LTE">{{ 'search.to' | t }}</label>
+                <span class="field-currency">{{ cart.currency.symbol }}</span>
+                <input class="field__input"
+                    name="{{ filter.max_value.param_name }}"
+                    id="Mobile-Filter-{{ filter.label | escape }}-LTE"
+                    {%- if filter.max_value.value -%}
+                        {%- if uses_comma_decimals -%}value="{{ filter.max_value.value | money_without_currency | replace: '.', '' | replace: ',', '.' }}"{%- else -%}value="{{ filter.max_value.value | money_without_currency | replace: ',', '' }}"{% endif %}
+                    {%- endif -%}
+                    type="number"
+                    min="0"
+                    inputmode="decimal"
+                    {%- if uses_comma_decimals -%}
+                    placeholder="{{ filter.range_max | money_without_currency | replace: '.', '' | replace: ',', '.' }}"
+                    max="{{ filter.range_max | money_without_currency | replace: '.', '' | replace: ',', '.' }}"
+                    {%- else -%}
+                    placeholder="{{ filter.range_max | money_without_currency | replace: ',', '' }}"
+                    max="{{ filter.range_max | money_without_currency | replace: ',', '' }}"
+                    {% endif %}
+                >
+            </x-cell>
+            </x-grid>
+        </div>
+    </details>
+{% endcase %}
+{%- endfor -%}
+
+{% if results.current_vendor or results.current_type %}
+    <input type="hidden" name="q" value="{{ results.current_vendor }}{{ results.current_type }}">
+{% endif %}
+
+{%- if results.terms -%}
+    <input type="hidden" name="q" value="{{ results.terms | escape }}">
+    <input name="options[prefix]" type="hidden" value="last">
+{%- endif -%} 
+
+    <x-grid columns="2" ai="center" class="padd">
+        <x-cell js="center"><a href="{{ results_url }}" class="button is-blank">{{ 'search.clear' | t }}</a></x-cell>
+        <x-cell><button type="submit">{{ 'search.apply' | t }}</button></x-cell>
+    </x-grid>           
+
+</form>
+</details>

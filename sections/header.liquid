@@ -1,696 +1,542 @@
-<style>
-  {%- assign logo_width = 695 -%}
-  {%- assign logo_max_width = section.settings.logo_max_width | times: 1 -%}
-  {% if logo_max_width < logo_width %}
-    {%- assign logo_width = logo_max_width -%}
-  {% endif %}
-  .logo__image-wrapper {
-    max-width: {{ logo_width }}px;
-  }
-  /*================= If logo is above navigation ================== */
-  {% if section.settings.nav_below_logo %}
-    .site-nav {
-      {% if section.settings.show_header_lines %}
-        border-top: 1px solid {{ settings.color_borders }};
-        border-bottom: 1px solid {{ settings.color_borders }};
-      {% endif %}
-      margin-top: 30px;
+
+{%- liquid
+# Search
+    render 'header-search'
+
+# Variables
+    assign hasIcons = section.settings.hasIcons
+
+# Header position type
+    if template.name == "index" and section.settings.homeOverlay
+        if section.settings.headerPosition == true 
+            assign headerPosition = 'fixed'
+        else 
+            assign headerPosition = 'absolute'
+        endif
+    else 
+        if section.settings.headerPosition == true 
+            assign headerPosition = 'sticky'
+        else 
+            assign headerPosition = 'inherit'
+        endif
+    endif
+
+# For loops
+    for block in section.blocks 
+
+# How many blocks
+    if forloop.first == true
+        assign blockNumb = forloop.length
+    endif
+
+# Blocks
+    case block.type 
+    when 'menuLinks'
+        render 'header-mobile', linklist: block.settings.main_linklist, suggestedLinklist: section.settings.suggestedLinklist
+    when 'accounts'
+        unless template == 'cart'
+            render 'header-cart'
+        endunless
+    when 'logo'
+        assign logoFont = block.settings.logoFont
+        assign logoFontBold = logoFont | font_modify: 'weight', 'bold'
+        assign logoFontItalic = logoFont | font_modify: 'style', 'italic'
+        assign logoFontBoldItalic = logoFontBold | font_modify: 'style', 'italic'
+
+        if block.settings.logoImage == blank
+        capture logoBlock
+            echo logoFont | font_face: font_display: 'swap'
+            echo logoFontBold | font_face: font_display: 'swap'
+            echo logoFontItalic | font_face: font_display: 'swap'
+            echo logoFontBoldItalic | font_face: font_display: 'swap'
+        endcapture
+        endif
+    endcase 
+    endfor
+-%}
+
+{%- style -%}
+{{ logoBlock }}
+:root{ --headerPosition:{{ headerPosition }};--logoFontFamily:{{ logoFont.family }},{{ logoFont.fallback_families }};--logoFontWeight:{{ logoFont.weight }};--logoFontStyle:{{ logoFont.style }} }
+{%- if section.settings.outlinedLinks -%}
+@media (min-width:778px) {
+    .main-header header a.no-style, .main-header header .dm.lv1 summary { padding-inline: calc(1.5 * var(--buttonPadding))!important }
+    .main-header header :where(a.no-style,.dm.lv1 summary):hover,
+    .main-header header details[open] > summary { outline: 1px solid var(--globalBorderColor); outline-offset: -1rem; border-radius: calc(1rem + var(--radius)) }
+}
+{%- endif -%}
+
+{%- if template.name == "index" and section.settings.homeOverlay -%}
+    [class*="group-header"]:not(.main-header) { display: none }
+    :is(.main-header #header, .main-header #header details.dm > details-menu) {
+        --headerColor: {{ section.settings.overlayTextColor }};
+        --linkColor: var(--headerColor);
+        --linkHover: var(--headerColor);
+        --headerBorder: {{ section.settings.overlayBorderColor }};
+    {%- if section.settings.bgFill == 'translucent' -%}
+        --headerBg: {{ section.settings.overlayBgColor | color_modify: 'alpha', 0.65 }}; -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+    {%- elsif section.settings.bgFill == 'transparent' -%}
+        --headerBg: transparent;
+    {%- endif -%}
     }
-
-    {% unless section.settings.left_aligned_logo %}
-      .logo__image-wrapper {
-        margin: 0 auto;
-      }
-    {% endunless %}
-  {% endif %}
-
-  /*============ If logo is on the same line as navigation ============ */
-  {% unless section.settings.nav_below_logo or section.settings.show_header_lines == false %}
-    .site-header .grid--full {
-      border-bottom: 1px solid {{ settings.color_borders }};
-      padding-bottom: 30px;
-    }
-  {% endunless %}
+{%- endif -%}
+  
+{%- endstyle -%}
 
 
-  {% unless section.settings.nav_below_logo %}
-    @media screen and (min-width: 769px) {
-      .site-nav {
-        text-align: right!important;
-      }
-    }
-  {% endunless %}
-</style>
-
-<div data-section-id="{{ section.id }}" data-section-type="header-section">
-  <div class="header-bar">
-    <div class="wrapper medium-down--hide">
-      <div class="post-large--display-table">
-
-        {% if section.settings.show_announcement or section.settings.header_search_enable %}
-          <div class="header-bar__left post-large--display-table-cell">
-
-            {% comment %}
-              Add social links to header
-            {% endcomment %}
-
-            {% comment %}
-            <div class="header-bar__module header-bar__module--list">
-              {% include 'social-links' %}
-            </div>
-            {% endcomment %}
-
-            {% if section.settings.show_announcement %}
-              <div class="header-bar__module header-bar__message">
-                {% if section.settings.announcement_link != blank %}
-                  <a href="{{ section.settings.announcement_link }}">
-                {% endif %}
-                  {{ section.settings.header_text | escape }}
-                {% if section.settings.announcement_link != blank %}
-                  </a>
-                {% endif %}
-              </div>
-            {% elsif section.settings.header_search_enable %}
-              <div class="header-bar__module header-bar__search">
-                {% include 'search-bar' with 'header' %}
-              </div>
-            {% endif %}
-
-          </div>
-        {% endif %}
-
-        <div class="header-bar__right post-large--display-table-cell">
-
-          {% if shop.customer_accounts_enabled %}
-            <ul class="header-bar__module header-bar__module--list">
-              {% if customer %}
-                <li>
-                  <a href="{{ routes.account_url }}">{{ 'layout.customer.account' | t }}</a>
-                </li>
-                <li>
-                  {{ 'layout.customer.log_out' | t | customer_logout_link }}
-                </li>
-              {% else %}
-                <li>
-                  {{ 'layout.customer.log_in' | t | customer_login_link }}
-                </li>
-                <li>{{ 'layout.customer.or' | t }}</li>
-                <li>
-                  {{ 'layout.customer.create_account' | t | customer_register_link }}
-                </li>
-              {% endif %}
-            </ul>
-          {% endif %}
-
-          <div class="header-bar__module">
-            <span class="header-bar__sep" aria-hidden="true"></span>
-            <a href="{{ routes.cart_url }}" class="cart-page-link">
-              <span class="icon icon-cart header-bar__cart-icon" aria-hidden="true"></span>
-            </a>
-          </div>
-
-          <div class="header-bar__module">
-            <a href="{{ routes.cart_url }}" class="cart-page-link">
-              {{ 'layout.cart.title' | t }}{% unless cart.item_count == 0 %}:{% endunless %}
-              <span class="cart-count header-bar__cart-count{% if cart.item_count == 0 %} hidden-count{% endif %}">{{ cart.item_count }}</span>
-            </a>
-          </div>
-
-          {% if section.settings.header_search_enable %}
-            {% if section.settings.show_announcement %}
-              <div class="header-bar__module header-bar__search">
-                {% include 'search-bar' with 'header' %}
-              </div>
-            {% endif %}
-          {% endif %}
-
-        </div>
-      </div>
-    </div>
-
-    <div class="wrapper post-large--hide announcement-bar--mobile">
-      {% if section.settings.show_announcement %}
-        {% if section.settings.announcement_link != blank %}
-          <a href="{{ section.settings.announcement_link }}">
-        {% endif %}
-          <span>{{ section.settings.header_text | escape }}</span>
-        {% if section.settings.announcement_link != blank %}
-          </a>
-        {% endif %}
-      {% endif %}
-    </div>
-
-    <div class="wrapper post-large--hide">
-      {% unless section.settings.nav_menu == blank and section.settings.header_search_enable == false and shop.customer_accounts_enabled == false %}
-        <button type="button" class="mobile-nav-trigger" id="MobileNavTrigger" aria-controls="MobileNav" aria-expanded="false">
-          <span class="icon icon-hamburger" aria-hidden="true"></span>
-          {{ 'layout.navigation.menu' | t }}
-        </button>
-      {% endunless %}
-      <a href="{{ routes.cart_url }}" class="cart-page-link mobile-cart-page-link">
-        <span class="icon icon-cart header-bar__cart-icon" aria-hidden="true"></span>
-        {{ 'layout.cart.title' | t }} <span class="cart-count{% if cart.item_count == 0 %} hidden-count{% endif %}">{{ cart.item_count }}</span>
-      </a>
-    </div>
-    {% include 'mobile-nav' with linklists[section.settings.nav_menu] %}
-  </div>
-
-  <header class="site-header" role="banner">
-    <div class="wrapper">
-
-      {% if section.settings.nav_below_logo %}
-        <div class="grid--full">
-          <div class="grid__item">
-            {% if request.page_type == 'index' %}
-              <h1 class="site-header__logo{% if section.settings.logo == blank %}{% unless section.settings.left_aligned_logo == false and section.settings.nav_below_logo %} post-large--left{% endunless %}{% endif %}" itemscope itemtype="http://schema.org/Organization">
-            {% else %}
-              <div class="h1 site-header__logo{% if section.settings.logo == blank %}{% unless section.settings.left_aligned_logo == false and section.settings.nav_below_logo %} post-large--left{% endunless %}{% endif %}" itemscope itemtype="http://schema.org/Organization">
-            {% endif %}
-              {% if section.settings.logo != blank %}
-                <noscript>
-                  {% capture image_size %}{{ logo_width | escape }}x{% endcapture %}
-                  <div class="logo__image-wrapper">
-                    {{ section.settings.logo | img_url: image_size | img_tag: shop.name }}
-                  </div>
-                </noscript>
-                <div class="logo__image-wrapper supports-js">
-                  <a href="{{ routes.root_url }}" itemprop="url" style="padding-top:{{ 1 | divided_by: section.settings.logo.aspect_ratio | times: 100}}%;">
-                    {% assign img_url = section.settings.logo | img_url: '1x1' | replace: '_1x1.', '_{width}x.' %}
-                    <img class="logo__image lazyload"
-                         src="{{ section.settings.logo | img_url: '300x300' }}"
-                         data-src="{{ img_url }}"
-                         data-widths="[120, 180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 1944, 2048]"
-                         data-aspectratio="{{ section.settings.logo.aspect_ratio }}"
-                         data-sizes="auto"
-                         alt="{{ shop.name | escape }}"
-                         itemprop="logo">
-                  </a>
-                </div>
-              {% else %}
-                <a href="{{ routes.root_url }}" itemprop="url">{{ shop.name }}</a>
-              {% endif %}
-            {% if request.page_type == 'index' %}
-              </h1>
-            {% else %}
-              </div>
-            {% endif %}
-          </div>
-        </div>
-        <div class="grid--full medium-down--hide">
-          <div class="grid__item">
-            {% include 'site-nav' with linklists[section.settings.nav_menu] %}
-          </div>
-        </div>
-      {% else %}
-        <div class="grid--full post-large--display-table">
-          <div class="grid__item post-large--one-third post-large--display-table-cell">
-            {% if request.page_type == 'index' %}
-              <h1 class="site-header__logo{% if section.settings.logo == blank %}{% unless section.settings.left_aligned_logo == false and section.settings.nav_below_logo %} post-large--left{% endunless %}{% endif %}" itemscope itemtype="http://schema.org/Organization">
-            {% else %}
-              <div class="h1 site-header__logo{% if section.settings.logo == blank %}{% unless section.settings.left_aligned_logo == false and section.settings.nav_below_logo %} post-large--left{% endunless %}{% endif %}" itemscope itemtype="http://schema.org/Organization">
-            {% endif %}
-              {% if section.settings.logo != blank %}
-                <noscript>
-                  {% capture image_size %}{{ logo_width | escape }}x{% endcapture %}
-                  <div class="logo__image-wrapper">
-                    {{ section.settings.logo | img_url: image_size | img_tag: shop.name }}
-                  </div>
-                </noscript>
-                <div class="logo__image-wrapper supports-js">
-                  <a href="{{ routes.root_url }}" itemprop="url" style="padding-top:{{ 1 | divided_by: section.settings.logo.aspect_ratio | times: 100}}%;">
-                    {% assign img_url = section.settings.logo | img_url: '1x1' | replace: '_1x1.', '_{width}x.' %}
-                    <img class="logo__image lazyload"
-                         src="{{ section.settings.logo | img_url: '300x300' }}"
-                         data-src="{{ img_url }}"
-                         data-widths="[120, 180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 1944, 2048]"
-                         data-aspectratio="{{ section.settings.logo.aspect_ratio }}"
-                         data-sizes="auto"
-                         alt="{{ shop.name | escape }}"
-                         itemprop="logo">
-                  </a>
-                </div>
-              {% else %}
-                <a href="{{ routes.root_url }}" itemprop="url">{{ shop.name }}</a>
-              {% endif %}
-            {% if request.page_type == 'index' %}
-              </h1>
-            {% else %}
-              </div>
-            {% endif %}
-          </div>
-          <div class="grid__item post-large--two-thirds post-large--display-table-cell medium-down--hide">
-            {% include 'site-nav' with linklists[section.settings.nav_menu] %}
-          </div>
-        </div>
-      {% endif %}
-
-    </div>
-  </header>
+<header id="header" style="padding-top:10px;">
+  {% comment %}
+  <div class="top-bar">
+  <p class="top-bar-txt">US Orders over $100 get free shipping!</p>
 </div>
+{% endcomment %}
 
+    <x-grid id="header-grid" columns="{{ blockNumb }}" columns-s="2" {% if section.settings.hasBorder == true %}class="hasBorders"{% endif %}>
+    {%- assign hasAccounts = false -%}
+    {%- for block in section.blocks -%}
+    {%- case block.type -%}
+    {%- when 'logo' -%}
+        <x-cell class="bogo" order-s="1" {{ block.shopify_attributes }}>
+            <style>:root{--logoImageSize:{{ block.settings.logoImageSize }}px;--logoAlign:{{ block.settings.logoAlignment }}}</style>
+            <a href="{{ routes.root_url }}" class="no-style">
+                {%- if block.settings.logoImage != blank -%}
+                {%- assign img = block.settings.logoImage -%}
+                {{ img | image_url: width: 400 | image_tag:
+                    class: 'logo',
+                    widths: '100,200,400',
+                    alt: shop.name | escape
+                }}
+                {%- else -%}
+                <div class="logo" style="--logoSize:{{ block.settings.logoFontSize }}px;">
+                    {% if block.settings.logoName != blank %} {{ block.settings.logoName }} {% else %} {{ shop.name }} {% endif %}
+                </div>
+                {%- endif -%}
+            </a>
+        </x-cell>
+    {%- when 'menuLinks' -%}
+    <x-cell class="menulink large-only" style="--navAlign:{{ block.settings.navigationAlignment }};--navDropdownAlign:{{ block.settings.navigationDropdownAlignment }}" {{ block.shopify_attributes }}>
+    {%- assign linklist = block.settings.main_linklist -%}
+    <nav>
+    <ul class="inline large-only">
+    {%- comment -%} Main Menu {%- endcomment -%}
+    {%- for link in linklists[linklist].links -%}
+        <li>
+        {% if link.links == blank %}
+            <a href="{{ link.url }}" class="no-style">{{ link.title }}</a>
+        {% else %}
+            <details class="dm lv1 closex" id="Details-{{ forloop.index }}">
+            <summary class="dropdown-caret">{{ link.title }}</summary>
+            <details-menu id="Menu-{{ forloop.index }}">
+                <div class="mob-scroller">
+                <ul class="inline">
+                {%- for child_link in link.links -%} 
+                {% if child_link.links == blank %}
+                    <li><a href="{{ child_link.url }}" class="no-style">{{ child_link.title }}</a></li>
+                {%- else -%}
+                    <li><details class="dm lv2 closex" id="Details-{{ forloop.index }}">
+                    <summary class="dropdown-caret">{{ child_link.title }}</summary>
+                    <details-menu id="Menu-{{ forloop.index }}">
+                        <div class="mob-scroller">
+                        <ul class="inline">
+                        {%- for grandchild_link in child_link.links -%} 
+                        {%- if grandchild_link.links == blank -%}
+                            <li><a href="{{ grandchild_link.url }}" class="no-style">{{ grandchild_link.title }}</a></li>
+                        {%- else -%}
+                            <li><details class="dm lv3 closex" id="Details-{{ forloop.index }}">
+                            <summary class="dropdown-caret">{{ grandchild_link.title }}</summary>
+                            <details-menu id="Menu-{{ forloop.index }}">
+                                <div class="mob-scroller">
+                            <ul class="inline">
+                            {%- for grandgrandchild_link in grandchild_link.links -%} 
+                            {%- if grandgrandchild_link.links == blank -%}
+                                <a href="{{ grandgrandchild_link.url }}" class="no-style">{{ grandgrandchild_link.title }}</a>
+                            {%- endif -%}
+                            {%- endfor -%}
+                            </ul>
+                            </div>
+                            </details-menu>
+                            </details></li>
+                        {%- endif -%}
+                        {%- endfor -%}
+                        </ul>
+                    </div>
+                    </details-menu>
+                    </details></li>
+                {%- endif-%}
+                {%- endfor -%}
+                </ul>
+            </div>
+            </details-menu>
+            </details>
+        {% endif %}
+        </li>
+    {%- endfor -%}
+    </ul>
+    </nav>
+    {%- if section.settings.openOnHover -%}
+        <script>document.addEventListener('DOMContentLoaded', () => { const header = document.querySelector('#header'); const detailsx = header.querySelectorAll('.closex'); detailsx.forEach((detail) => { detail.addEventListener('mouseover', () => { detail.setAttribute('open', ''); a11yDetails() }); detail.addEventListener('mouseout', () => {  detail.removeAttribute('open'); a11yDetails()  }) }) })</script>
+    {%- endif -%}
+    </x-cell>
+    {%- when 'accounts' -%}
+    {%- assign hasAccounts = true -%}
+        <x-cell class="accounts" order-s="3" style="--accAlign:{{ block.settings.accountsAlignment }}" {{ block.shopify_attributes }}>
+        <ul class="inline {% if hasIcons %}hasIco{%- endif -%}">
+      {%- if block.settings.searchBar != false -%}
+            <li><a href="{{ routes.search_url }}" class="no-style fire-search" onclick="event.preventDefault()">
+                {%- if hasIcons -%}
+                    {% render 'global-icon' with 'search' %}
+                    <span class="visually-hidden">{{ 'header.search' | t }}</span>
+                {%- else -%}
+                    {{ 'header.search' | t }}
+                {%- endif -%}
+            </a></li>
+            {%- endif -%}
+            {%- comment -%} Account URLS {%- endcomment -%}
+            {%- if shop.customer_accounts_enabled and block.settings.accountLink != false -%}
+                {%- if customer -%}
+                <li class="large-only">
+                    <a href="{{ routes.account_url }}" class="no-style">
+                    {%- if hasIcons -%}
+                        {% render 'global-icon' with 'user' %}
+                        <span class="visually-hidden">{{ 'header.account' | t }}</span>
+                    {%- else -%}
+                        {{ 'header.account' | t }}
+                    {%- endif -%}
+                    </a>
+                </li>
+                {% else %}
+                <li class="large-only">
+                    <a href="{{ routes.account_login_url }}" class="no-style">
+                    {%- if hasIcons -%}
+                        {% render 'global-icon' with 'user' %}
+                        <span class="visually-hidden">{{ 'header.login' | t }}</span>
+                    {%- else -%}
+                        {{ 'header.login' | t }}
+                    {%- endif -%}
+                    </a>
+                </li>
+                {%- endif -%}
+            {%- endif -%}
+            <li class="small-only hamburger">
+                <button class="is-blank fire-menu no-js-hidden">
+                {%- if hasIcons -%}
+                    {% render 'global-icon' with 'menu' %}
+                    <span class="visually-hidden">{{ 'header.menu' | t }}</span>
+                {%- else -%}
+                    {{ 'header.menu' | t }}
+                {%- endif -%}
+                </button>
+                <noscript>
+                    <a href="#mobmenu" class="no-style" style="padding:0">
+                        {%- if hasIcons -%}
+                            {% render 'global-icon' with 'menu' %}
+                            <span class="visually-hidden">{{ 'header.menu' | t }}</span>
+                        {%- else -%}
+                            {{ 'header.menu' | t }}
+                        {%- endif -%}
+                    </a>
+                </noscript>
+            </li>
+            
+
+            <li class="cartCounter"><a href="{{ routes.cart_url }}" class="no-style" onclick="event.preventDefault()" tabindex="0">
+                <span id="counter" class="carto" data-count="{{ cart.item_count }}">
+                    {%- if hasIcons -%} {% render 'global-icon' with 'cart' %} {%- endif -%}
+                    <span class="visually-hidden">{{ cart.item_count }}</span>
+                </span>
+            </a></li>
+        </ul>
+        </x-cell>
+    {%- endcase -%}
+    {%- endfor -%}
+    {%- if hasAccounts == false -%}
+        <x-cell class="accounts small-only" order-s="3" style="--accAlign:{{ block.settings.accountsAlignment }}" {{ block.shopify_attributes }}>
+            <ul class="inline {% if hasIcons %}hasIco{%- endif -%}">
+                <li class="hamburger">
+                    <span class="fire-menu" style="padding:var(--buttonPadding)">
+                    {%- if hasIcons -%}
+                        {% render 'global-icon' with 'menu' %}
+                        <span class="visually-hidden">{{ 'header.menu' | t }}</span>
+                    {%- else -%}
+                        {{ 'header.menu' | t }}
+                    {%- endif -%}
+                    </span>
+                </li>
+            </ul>
+        </x-cell>
+    {%- endif -%}
+    </x-grid>
+</header>
+
+<script>document.body.classList.add('hp{{ headerPosition }}'); let headerElements = document.querySelectorAll('[class*="group-header"]'), headerHeight = 0, debouncer; function updateHeaderHeight() { headerHeight = 0; headerElements.forEach(element => { headerHeight += element.clientHeight }); document.body.style.setProperty('--headerGroupHeight', `${headerHeight}px`); getElementHeight('#header','body','--headerHeight'); getElementHeight('.noticer','body','--noticerHeight') } function debouncedResize() { clearTimeout(debouncer); debouncer = setTimeout(() => updateHeaderHeight(), 100) } document.addEventListener('DOMContentLoaded', () => { updateHeaderHeight() }); window.addEventListener('resize', debouncedResize);</script>
 
 {% schema %}
 {
-  "name": {
-    "cs": "Záhlaví",
-    "da": "Overskrift",
-    "de": "Titel",
-    "en": "Header",
-    "es": "Encabezado",
-    "fi": "Ylätunniste",
-    "fr": "En-tête",
-    "it": "Header",
-    "ja": "ヘッダー",
-    "ko": "헤더",
-    "nb": "Header",
-    "nl": "Koptekst",
-    "pl": "Nagłówek",
-    "pt-BR": "Cabeçalho",
-    "pt-PT": "Cabeçalho",
-    "sv": "Rubrik",
-    "th": "ส่วนหัว",
-    "tr": "Üstbilgi",
-    "vi": "Đầu trang",
-    "zh-CN": "标头",
-    "zh-TW": "標頭"
-  },
+  "name": "Header",
+  "class": "main-header",
   "settings": [
     {
-      "type": "checkbox",
-      "id": "header_search_enable",
-      "label": {
-        "cs": "Zobrazit lištu vyhledávání",
-        "da": "Vis søgelinje",
-        "de": "Suchleiste anzeigen",
-        "en": "Show search bar",
-        "es": "Mostrar barra de búsqueda",
-        "fi": "Näytä hakupalkki",
-        "fr": "Afficher la barre de recherche",
-        "it": "Mostra barra di ricerca",
-        "ja": "検索バーを表示する",
-        "ko": "검색 바 표시",
-        "nb": "Vis søkefelt",
-        "nl": "Zoekbalk weergeven",
-        "pl": "Pokaż pasek wyszukiwania",
-        "pt-BR": "Exibir barra de pesquisa",
-        "pt-PT": "Mostrar barra de pesquisa",
-        "sv": "Visa sökfältet",
-        "th": "แสดงแถบการค้นหา",
-        "tr": "Arama çubuğunu göster",
-        "vi": "Hiển thị thanh tìm kiếm",
-        "zh-CN": "显示搜索栏",
-        "zh-TW": "顯示搜尋列"
-      }
-    },
-    {
-      "type": "image_picker",
-      "id": "logo",
-      "label": {
-        "cs": "Logo",
-        "da": "Logo",
-        "de": "Logo",
-        "en": "Logo",
-        "es": "Logo",
-        "fi": "Logo",
-        "fr": "Logo",
-        "it": "Logo",
-        "ja": "ロゴ",
-        "ko": "로고",
-        "nb": "Logo",
-        "nl": "Logo",
-        "pl": "Logo",
-        "pt-BR": "Logotipo",
-        "pt-PT": "Logótipo",
-        "sv": "Logotyp",
-        "th": "โลโก้",
-        "tr": "Logo",
-        "vi": "Logo",
-        "zh-CN": "logo",
-        "zh-TW": "商標"
-      },
-      "info": {
-        "cs": "Doporučujeme 450 x 200 pixelů",
-        "da": "450 x 200 pixel anbefales",
-        "de": "450 x 200 Pixel empfohlen",
-        "en": "450 x 200px recommended",
-        "es": "450 x 200px recomendado",
-        "fi": "Suositus 450 x 200px",
-        "fr": "450 x 200 px recommandé",
-        "it": "450 x 200 px consigliato",
-        "ja": "450 x 200ピクセルを推奨",
-        "ko": "450x200 픽셀 권장",
-        "nb": "450 x 200 px anbefales",
-        "nl": "450 x 200 px aanbevolen",
-        "pl": "Zalecany rozmiar 450 na 200 pikseli",
-        "pt-BR": "450 x 200 px recomendado",
-        "pt-PT": "450 x 200 píxeis (recomendado)",
-        "sv": "450 x 200px rekommenderas",
-        "th": "แนะนำขนาด 450 x 200 พิกเซล",
-        "tr": "450 x 200 piksel önerilir",
-        "vi": "Đề xuất 450 x 200px",
-        "zh-CN": "推荐使用 450 x 200 像素大小",
-        "zh-TW": "建議使用 450 x 200px"
-      }
-    },
-    {
-      "type": "text",
-      "id": "logo_max_width",
-      "label": {
-        "cs": "Šířka vlastního loga (v pixelech)",
-        "da": "Tilpasset logobredde (i pixels)",
-        "de": "Benutzerdefinierte Logobreite (Pixel)",
-        "en": "Custom logo width (in pixels)",
-        "es": "Ancho del logo personalizado (en píxeles)",
-        "fi": "Mukautettu logon leveys (pikseleinä)",
-        "fr": "Largeur personnalisée du logo (en pixels)",
-        "it": "Larghezza logo personalizzato (in pixel)",
-        "ja": "ロゴの幅をカスタマイズする (ピクセル単位)",
-        "ko": "사용자 지정 로고 폭 (픽셀)",
-        "nb": "Tilpasset logobredde (i piksler)",
-        "nl": "Aangepaste logobreedte (in pixels)",
-        "pl": "Niestandardowa szerokość logo (w pikselach)",
-        "pt-BR": "Largura do logotipo personalizado (em pixels)",
-        "pt-PT": "Largura de logótipo personalizada (em píxeis)",
-        "sv": "Anpassad logotypbredd (i pixlar)",
-        "th": "ความกว้างของโลโก้แบบกำหนดเอง (เป็นพิกเซล)",
-        "tr": "Özel logo genişliği (piksel)",
-        "vi": "Chiều rộng logo tùy chỉnh (pixel)",
-        "zh-CN": "自定义 logo 宽度（像素）",
-        "zh-TW": "自訂標誌寬度 (單位為像素)"
-      },
-      "default": {
-        "cs": "450",
-        "da": "450",
-        "de": "450",
-        "en": "450",
-        "es": "450",
-        "fi": "450",
-        "fr": "450",
-        "it": "450",
-        "ja": "450",
-        "ko": "450",
-        "nb": "450",
-        "nl": "450",
-        "pl": "450",
-        "pt-BR": "450",
-        "pt-PT": "450",
-        "sv": "450",
-        "th": "450",
-        "tr": "450",
-        "vi": "450",
-        "zh-CN": "450",
-        "zh-TW": "450"
-      }
-    },
-    {
       "type": "header",
-      "content": {
-        "cs": "Hlavní nabídka",
-        "da": "Hovedmenu",
-        "de": "Hauptmenü",
-        "en": "Main menu",
-        "es": "Menú principal",
-        "fi": "Päävalikko",
-        "fr": "Menu principal",
-        "it": "Menu principale",
-        "ja": "メインメニュー",
-        "ko": "주 메뉴",
-        "nb": "Hovedmeny",
-        "nl": "Hoofdmenu",
-        "pl": "Menu główne",
-        "pt-BR": "Menu principal",
-        "pt-PT": "Menu principal",
-        "sv": "Huvudmeny",
-        "th": "เมนูหลัก",
-        "tr": "Ana menü",
-        "vi": "Menu chính",
-        "zh-CN": "主菜单",
-        "zh-TW": "主選單"
-      }
-    },
-    {
-      "type": "link_list",
-      "id": "nav_menu",
-      "label": {
-        "cs": "Nabídka",
-        "da": "Menu",
-        "de": "Menü",
-        "en": "Menu",
-        "es": "Menú",
-        "fi": "Valikko",
-        "fr": "Menu",
-        "it": "Menu",
-        "ja": "メニュー",
-        "ko": "메뉴",
-        "nb": "Meny",
-        "nl": "Menu",
-        "pl": "Menu",
-        "pt-BR": "Menu",
-        "pt-PT": "Menu",
-        "sv": "Meny",
-        "th": "เมนู",
-        "tr": "Menü",
-        "vi": "Menu",
-        "zh-CN": "菜单",
-        "zh-TW": "選單"
-      },
-      "default": "main-menu"
+      "content": "Header",
+      "info": "Find out how you can customize your header even more. [Learn more](https://bullet.docs.openthinking.net/#/snippets?id=custom-headers)"
     },
     {
       "type": "checkbox",
-      "id": "nav_below_logo",
-      "label": {
-        "cs": "Zarovnat hlavní nabídku pod logem na střed",
-        "da": "Centrer hovedmenuen under logoet",
-        "de": "Hauptmenü unter Logo zentrieren",
-        "en": "Center main menu below logo",
-        "es": "Centrar el menú principal debajo del logo",
-        "fi": "Keskitä päävalikko logon alle",
-        "fr": "Centrer le menu principal sous le logo",
-        "it": "Centra menu principale sotto il logo",
-        "ja": "ロゴの下のメインメニューを中央寄せする",
-        "ko": "로고 아래 중앙 주요 메뉴",
-        "nb": "Sentrer hovedmeny under logo",
-        "nl": "Centreer hoofdmenu onder logo",
-        "pl": "Wyśrodkuj menu główne pod logo",
-        "pt-BR": "Centralizar menu principal abaixo do logotipo",
-        "pt-PT": "Centrar menu principal abaixo do logótipo",
-        "sv": "Centrera huvudmeny under logotypen",
-        "th": "จัดเมนูหลักใต้โลโก้ให้อยู่ตรงกลาง",
-        "tr": "Ana menüyü logonun alt kısmına ortala",
-        "vi": "Căn giữa menu chính bên dưới logo",
-        "zh-CN": "在 logo 下方居中显示主菜单",
-        "zh-TW": "將主選單置中並置於商標下方"
-      }
-    },
-    {
-      "type": "checkbox",
-      "id": "left_aligned_logo",
-      "label": {
-        "cs": "Zarovnat logo doleva",
-        "da": "Venstrejuster logo",
-        "de": "Logo linksbündig ausrichten",
-        "en": "Left-align logo",
-        "es": "Alinear el logo a la izquierda",
-        "fi": "Tasaa logo vasemmalle",
-        "fr": "Aligner le logo à gauche",
-        "it": "Allinea logo a sinistra",
-        "ja": "ロゴを左寄せする",
-        "ko": "왼쪽 맞춤 로고",
-        "nb": "Venstrejuster logo",
-        "nl": "Logo links uitlijnen",
-        "pl": "Wyrównaj logo do lewej",
-        "pt-BR": "Alinhar logotipo à esquerda",
-        "pt-PT": "Alinhar logótipo à esquerda",
-        "sv": "Vänsterjustera logotypen",
-        "th": "จัดโลโก้ชิดซ้าย",
-        "tr": "Logoyu sola hizala",
-        "vi": "Căn trái logo",
-        "zh-CN": "左对齐 logo",
-        "zh-TW": "將商標靠左對齊"
-      }
-    },
-    {
-      "type": "checkbox",
-      "id": "show_header_lines",
-      "label": {
-        "cs": "Zobrazit v záhlaví oddělovací čáry",
-        "da": "Vis skillelinjer i sidehoved",
-        "de": "Trennlinien in Header anzeigen",
-        "en": "Show divider lines in header",
-        "es": "Mostrar líneas divisorias en el encabezado",
-        "fi": "Näytä väliviivat otsikossa",
-        "fr": "Afficher les lignes de séparation dans l'en-tête",
-        "it": "Mostra linee divisorie nell'header",
-        "ja": "ヘッダーに分割線を表示する",
-        "ko": "제목에 구분선 표시",
-        "nb": "Vis skillelinjer i topptekst",
-        "nl": "Toon scheidingslijnen in koptekst",
-        "pl": "Pokaż linie podziału w nagłówku",
-        "pt-BR": "Exibir linhas divisórias no cabeçalho",
-        "pt-PT": "Mostrar linhas divisórias no cabeçalho",
-        "sv": "Visa delningslinjer i rubriken",
-        "th": "แสดงเส้นแบ่งในส่วนหัว",
-        "tr": "Ayırıcı çizgileri üstbilgide göster",
-        "vi": "Hiển thị dòng phân chia ở đầu trang",
-        "zh-CN": "在标头中显示分割线",
-        "zh-TW": "在標頭中顯示分隔線"
-      }
-    },
-    {
-      "type": "header",
-      "content": {
-        "cs": "Panel oznámení",
-        "da": "Meddelelseslinje",
-        "de": "Ankündigungsbereich",
-        "en": "Announcement bar",
-        "es": "Barra de anuncios",
-        "fi": "Ilmoituspalkki",
-        "fr": "Barre d'annonces",
-        "it": "Barra degli annunci",
-        "ja": "告知バー",
-        "ko": "공지 표시줄",
-        "nb": "Kunngjøringslinje",
-        "nl": "Aankondigingsbalk",
-        "pl": "Pasek ogłoszeń",
-        "pt-BR": "Barra de avisos",
-        "pt-PT": "Barra de comunicado",
-        "sv": "Meddelandefält",
-        "th": "แถบประกาศ",
-        "tr": "Duyuru çubuğu",
-        "vi": "Thanh thông báo",
-        "zh-CN": "公告栏",
-        "zh-TW": "公告列"
-      }
-    },
-    {
-      "type": "checkbox",
-      "id": "show_announcement",
-      "label": {
-        "cs": "Zobrazit oznámení",
-        "da": "Vis meddelelse",
-        "de": "Ankündigung anzeigen",
-        "en": "Show announcement",
-        "es": "Mostrar anuncio",
-        "fi": "Näytä ilmoitus",
-        "fr": "Afficher l'annonce",
-        "it": "Mostra annuncio",
-        "ja": "告知を表示する",
-        "ko": "공지 표시",
-        "nb": "Vis kunngjøring",
-        "nl": "Aankondiging weergeven",
-        "pl": "Pokaż ogłoszenie",
-        "pt-BR": "Exibir comunicado",
-        "pt-PT": "Mostrar comunicado",
-        "sv": "Visa tillkännagivande",
-        "th": "แสดงประกาศ",
-        "tr": "Duyuruyu göster",
-        "vi": "Hiển thị thông báo",
-        "zh-CN": "显示公告",
-        "zh-TW": "顯示公告"
-      },
+      "id": "headerPosition",
+      "label": "Enable sticky header",
       "default": true
     },
     {
-      "type": "text",
-      "id": "header_text",
-      "label": {
-        "cs": "Text",
-        "da": "Tekst",
-        "de": "Text",
-        "en": "Text",
-        "es": "Texto",
-        "fi": "Teksti",
-        "fr": "Texte",
-        "it": "Testo",
-        "ja": "テキスト",
-        "ko": "텍스트",
-        "nb": "Tekst",
-        "nl": "Tekst",
-        "pl": "Tekst",
-        "pt-BR": "Texto",
-        "pt-PT": "Texto",
-        "sv": "Text",
-        "th": "ข้อความ",
-        "tr": "Metin",
-        "vi": "Văn bản",
-        "zh-CN": "文本",
-        "zh-TW": "文字"
-      },
-      "default": {
-        "cs": "Tady můžete zadat oznámení",
-        "da": "Meddel noget her",
-        "de": "Hier etwas ankündigen",
-        "en": "Announce something here",
-        "es": "Anuncia algo aquí",
-        "fi": "Ilmoita jotakin tässä",
-        "fr": "Annoncez quelque chose ici",
-        "it": "Annuncia qualcosa qui",
-        "ja": "ここで告知してください",
-        "ko": "여기에 공지하십시오",
-        "nb": "Kunngjør noe her",
-        "nl": "Kondig hier iets aan",
-        "pl": "Ogłoś coś tutaj",
-        "pt-BR": "Anuncie algo aqui",
-        "pt-PT": "Anunciar algo aqui",
-        "sv": "Meddela något här",
-        "th": "ประกาศข้อความที่นี่",
-        "tr": "Buraya bir duyuru ekleyin",
-        "vi": "Thông báo điều gì đó tại đây",
-        "zh-CN": "在此处进行公告",
-        "zh-TW": "在此公告資訊"
-      }
+      "type": "checkbox",
+      "id": "hasBorder",
+      "label": "Show borders",
+      "default": false
     },
     {
-      "type": "url",
-      "id": "announcement_link",
-      "label": {
-        "cs": "Odkaz",
-        "da": "Link",
-        "de": "Link",
-        "en": "Link",
-        "es": "Enlace",
-        "fi": "Linkki",
-        "fr": "Lien",
-        "it": "Link",
-        "ja": "リンク",
-        "ko": "링크",
-        "nb": "Kobling",
-        "nl": "Link",
-        "pl": "Link",
-        "pt-BR": "Link",
-        "pt-PT": "Ligação",
-        "sv": "Länk",
-        "th": "ลิงก์",
-        "tr": "Bağlantı",
-        "vi": "Liên kết",
-        "zh-CN": "链接",
-        "zh-TW": "連結"
-      },
-      "info": {
-        "cs": "Volitelné",
-        "da": "Valgfri",
-        "de": "Optional",
-        "en": "Optional",
-        "es": "Opcional",
-        "fi": "Valinnainen",
-        "fr": "Facultatif",
-        "it": "Facoltativo",
-        "ja": "オプション",
-        "ko": "선택 사항",
-        "nb": "Valgfritt",
-        "nl": "Optioneel",
-        "pl": "Opcjonalnie",
-        "pt-BR": "Opcional",
-        "pt-PT": "Opcional",
-        "sv": "Valfritt",
-        "th": "ไม่จำเป็น",
-        "tr": "İsteğe bağlı",
-        "vi": "Không bắt buộc",
-        "zh-CN": "可选",
-        "zh-TW": "(選填)"
-      }
+      "type": "checkbox",
+      "id": "outlinedLinks",
+      "label": "Show link outline on hover",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "openOnHover",
+      "label": "Open menu on hover",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "hasIcons",
+      "label": "Show icons",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Home page overlay settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "homeOverlay",
+      "label": "Overlay header",
+      "info": "When enabled, this option will hide all header group sections except the header.",
+      "default": false
+    },
+    {
+        "type": "select",
+        "id": "bgFill",
+        "label": "Background type",
+        "default": "solid",
+        "options": [
+            { "value": "solid", "label": "Solid" },
+            { "value": "translucent", "label": "Translucent" },
+            { "value": "transparent", "label": "Transparent" }
+        ]
+    },
+    {
+        "type": "color",
+        "id": "overlayBgColor",
+        "label": "Background color",
+        "default": "#FFFFFF"
+    },
+    {
+        "type": "color",
+        "id": "overlayTextColor",
+        "label": "Text color",
+        "default": "#000000"
+    },
+    {
+        "type": "color",
+        "id": "overlayBorderColor",
+        "label": "Border color",
+        "default": "#000000"
     }
-  ]
+  ],
+  "blocks": [
+    {
+      "type": "logo",
+      "name": "Logo",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "header",
+          "content": "Image logo"
+        },
+        {
+          "type": "image_picker",
+          "id": "logoImage",
+          "label": "Image"
+        },
+        {
+          "type": "range",
+          "id": "logoImageSize",
+          "min": 20,
+          "max": 120,
+          "step": 5,
+          "unit": "px",
+          "label": "Size",
+          "default": 20
+        },
+        {
+          "type": "header",
+          "content": "Text logo",
+          "info": "Text logo will not be visible if an image logo is present."
+        },
+        {
+          "type": "text",
+          "id": "logoName",
+          "label": "Text"
+        },
+        {
+          "type": "font_picker",
+          "label": "Font",
+          "id": "logoFont",
+          "default": "helvetica_n4",
+          "info": "Selecting a different font can affect the speed of your store. [Learn more about system fonts.](https://help.shopify.com/en/manual/online-store/store-speed/improving-speed#fonts)"
+        },
+        {
+          "type": "range",
+          "id": "logoFontSize",
+          "min": 10,
+          "max": 30,
+          "step": 1,
+          "unit": "px",
+          "label": "Size",
+          "default": 15
+        },
+        {
+          "type": "header",
+          "content": "Block alignment"
+        },
+        {
+          "type": "select",
+          "id": "logoAlignment",
+          "label": "Content alignment",
+          "default": "flex-start",
+          "options": [
+            {
+              "value": "flex-start",
+              "label": "Left"
+            },
+            {
+              "value": "center",
+              "label": "Center"
+            },
+            {
+              "value": "flex-end",
+              "label": "Right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "menuLinks",
+      "name": "Navigation",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "link_list",
+          "id": "main_linklist",
+          "label": "Main menu",
+          "default": "main-menu"
+        },
+        {
+          "type": "header",
+          "content": "Block alignment"
+        },
+        {
+          "type": "select",
+          "id": "navigationAlignment",
+          "label": "Content alignment",
+          "default": "center",
+          "options": [
+            {
+              "value": "flex-start",
+              "label": "Left"
+            },
+            {
+              "value": "center",
+              "label": "Center"
+            },
+            {
+              "value": "flex-end",
+              "label": "Right"
+            }
+          ]
+        },
+        {
+          "type": "select",
+          "id": "navigationDropdownAlignment",
+          "label": "Dropdown links alignment",
+          "default": "auto",
+          "options": [
+            {
+              "value": "0",
+              "label": "Left"
+            },
+            {
+              "value": "auto",
+              "label": "Center"
+            },
+            {
+              "value": "auto 0",
+              "label": "Right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "accounts",
+      "name": "Secondary menu",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "accountLink",
+          "label": "Show link to user account",
+          "info": "Activate customer accounts first. [Learn more](https://help.shopify.com/en/manual/checkout-settings/customer-accounts)",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "searchBar",
+          "label": "Show search",
+          "default": true
+        },
+        {
+          "type": "header",
+          "content": "Block alignment"
+        },
+        {
+          "type": "select",
+          "id": "accountsAlignment",
+          "label": "Content alignment",
+          "default": "flex-end",
+          "options": [
+            {
+              "value": "flex-start",
+              "label": "Left"
+            },
+            {
+              "value": "center",
+              "label": "Center"
+            },
+            {
+              "value": "flex-end",
+              "label": "Right"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "default": {
+    "blocks": [
+      { "type": "logo" },
+      { "type": "menuLinks" },
+      { "type": "accounts" }
+    ]
+  }
 }
 {% endschema %}

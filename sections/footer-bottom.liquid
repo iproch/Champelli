@@ -1,0 +1,197 @@
+<sub-footer>
+	<x-grid columns="2" columns-s="1">
+	{%- for block in section.blocks -%}
+	{%- case block.type -%}
+	{%- when 'copyright' -%}
+		<x-cell x-flex ai="center" jc="{{ block.settings.alignment }}" jc-s="center" class="copyright text-{{ block.settings.alignment }} text-center-s" {% if block.settings.fullwidth %}span="row"{% endif %} {{ block.shopify_attributes }}>
+			{%- if block.settings.copyright == blank -%}
+				{% comment %} <span>&copy; {{ 'now' | date: "%Y" }} <a href="{{ routes.root_url }}" class="no-style">{{ shop.name }}</a>. {{ 'footer.all_rights' | t }}</span>
+			{% endcomment %}
+              © 2023 Champelli®. All rights reserved.
+              {%- else -%}
+				<span>{{ section.settings.copyright }}</span>
+			{%- endif -%}
+		</x-cell>
+
+	{%- when 'credits' -%}
+		<x-cell x-flex ai="center" jc="{{ block.settings.alignment }}" jc-s="center" id="shopify-credits" {% if block.settings.fullwidth %}span="row"{% endif %} {{ block.shopify_attributes }}>Powered by&nbsp;<a href="https://digitalderez.com/" target="_blank">Digital Derez</a></x-cell>
+
+	{%- when 'payments' -%}
+		<x-cell x-flex ai="center" jc="{{ block.settings.alignment }}" jc-s="center" class="payment-icons" {% if block.settings.fullwidth %}span="row"{% endif %} {{ block.shopify_attributes }}>
+	        {%- if shop.enabled_payment_types != empty -%}
+	        <div {% if block.settings.monochrome -%}style="filter:grayscale(1)"{%- endif -%}>
+	            {%- render 'global-paymenticons' -%}
+	        </div>
+	        {%- endif -%}
+		</x-cell>
+
+	{%- when 'selectors' -%}
+		<x-cell class="selectors" {% if block.settings.fullwidth %}span="row"{% endif %} {{ block.shopify_attributes }}>
+			<x-flex ai="center" jc="{{ block.settings.alignment }}" jc-s="center" style="gap:1rem;--rowGap:0" direction-s="column" wrap="wrap">
+				{%- render 'global-localization', position: 'Footer' -%}
+			</x-flex>
+		</x-cell>
+
+	{%- endcase -%}
+	{%- endfor -%}
+	</x-grid>
+</sub-footer>
+
+{% schema %}
+{
+  "name": "Sub-footer",
+  "class": "sub-footer",
+  "settings": [
+
+  ],
+  "blocks": [
+	{
+      "type": "credits",
+      "name": "Credits",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "header",
+          "content": "Appereance"
+        },
+        {
+            "type": "select",
+            "id": "alignment",
+            "label": "Alignment - desktop",
+            "default": "end",
+            "options": [
+                { "value": "start", "label": "Left" },
+                { "value": "center", "label": "Center" },
+                { "value": "end", "label": "Right" }
+            ]
+        },
+        {
+            "type": "checkbox",
+            "id": "fullwidth",
+            "label": "Full width row",
+            "default": false
+        }
+      ]
+    },
+	{
+      "type": "copyright",
+      "name": "Copyright",
+      "limit": 1,
+      "settings": [
+		{
+			"type": "textarea",
+			"id": "copyright",
+			"label": "Custom copyright",
+			"info": "Leave blank for default copyright notice."
+		},
+        {
+          "type": "header",
+          "content": "Appereance"
+        },
+        {
+            "type": "select",
+            "id": "alignment",
+            "label": "Alignment - desktop",
+            "default": "start",
+            "options": [
+                { "value": "start", "label": "Left" },
+                { "value": "center", "label": "Center" },
+                { "value": "end", "label": "Right" }
+            ]
+        },
+        {
+            "type": "checkbox",
+            "id": "fullwidth",
+            "label": "Full width row",
+            "default": false
+        }
+      ]
+    },
+	{
+      "type": "payments",
+      "name": "Payment icons",
+      "limit": 1,
+      "settings": [
+		{
+			"type": "header",
+			"content": "Payment icons",
+			"info": "The payment icons that show in your theme are determined by your store’s [payment settings.](/admin/settings/payments) and the customer’s region and currency. [Learn more...](https://bullet.docs.openthinking.net/#/howto?id=payments-icons)"
+		},
+        {
+          "type": "header",
+          "content": "Appereance"
+        },
+	    {
+	      "type": "checkbox",
+	      "id": "monochrome",
+	      "label": "Monochrome payment icons",
+	      "default": false
+	    },
+        {
+            "type": "select",
+            "id": "alignment",
+            "label": "Alignment - desktop",
+            "default": "start",
+            "options": [
+                { "value": "start", "label": "Left" },
+                { "value": "center", "label": "Center" },
+                { "value": "end", "label": "Right" }
+            ]
+        },
+        {
+            "type": "checkbox",
+            "id": "fullwidth",
+            "label": "Full width row",
+            "default": false
+        }
+      ]
+    },
+	{
+      "type": "selectors",
+      "name": "Selectors",
+      "limit": 1,
+      "settings": [
+	    {
+	      "type": "header",
+	      "content": "Country/region selector",
+	      "info": "To add a country/region, go to your [payment settings.](/admin/settings/payments)"
+	    },
+	    {
+	      "type": "header",
+	      "content": "Language selector",
+	      "info": "To add a language, go to your [language settings.](/admin/settings/languages)"
+	    },
+        {
+          "type": "header",
+          "content": "Appereance"
+        },
+        {
+            "type": "select",
+            "id": "alignment",
+            "label": "Alignment - desktop",
+            "default": "end",
+            "options": [
+                { "value": "start", "label": "Left" },
+                { "value": "center", "label": "Center" },
+                { "value": "end", "label": "Right" }
+            ]
+        },
+        {
+            "type": "checkbox",
+            "id": "fullwidth",
+            "label": "Full width row",
+            "default": false
+        }
+      ]
+    }
+  ],
+  "default": {
+    "blocks": [
+    	{ "type": "payments" },
+    	{ "type": "selectors" },
+    	{ "type": "copyright" },
+    	{ "type": "credits" }
+    ]
+  }
+}
+{% endschema %}

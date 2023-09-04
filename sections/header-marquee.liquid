@@ -1,0 +1,95 @@
+{%- if section.settings.homeOnly == false or template.name == 'index' -%}
+<section class="noticer" style="--noticerBg:{{ section.settings.noticerBg }};--noticerColor:{{ section.settings.noticerColor }};" noticer-moving="{{ section.settings.noticerMarquee }}">
+  <div class="no-style{% if section.settings.noticerMarquee == true %} marquee3k{% endif %}" {% if section.settings.noticerDirection == "true" %}data-reverse="true"{% endif %} data-speed="{{ section.settings.noticerSpeed }}" data-pausable="true">
+    {% if section.settings.notice != blank %}<span>
+      {% if section.settings.link != blank %}<a href="{{ section.settings.link }}" class="no-style">{% endif %}
+        {{ section.settings.notice }}
+      {% if section.settings.link != blank %}</a>{% endif %}
+    </span>{% endif %}
+  </div>
+</section>
+    
+{%- if section.settings.noticerMarquee -%}
+<script>
+{%- if request.design_mode -%}
+document.addEventListener("shopify:section:load", (e) => { 
+    if (document.getElementById(`shopify-section-${e.detail.sectionId}`).classList.contains('announcement-bar')) Marquee3k.init() 
+    });
+{%- endif -%}
+document.addEventListener("DOMContentLoaded", (e) => { Marquee3k.init() })
+</script>
+{%- endif -%}
+{%- endif -%}
+
+{% schema %}
+{
+    "name": "Announcement bar",
+    "class": "announcement-bar",
+    "limit": 2,
+    "enabled_on": { "groups": ["header"] },
+    "presets": [ { "name": "Announcement bar" } ],
+    "settings": [
+        {
+          "type": "checkbox",
+          "id": "homeOnly",
+          "label": "Show only on home page",
+          "default": false
+        },
+        {
+          "type": "checkbox",
+          "id": "noticerMarquee",
+          "label": "Moving text",
+          "default": true
+        },
+        {
+          "type": "textarea",
+          "id": "notice",
+          "label": "Text",
+          "default": "Announce something here"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Link"
+        },
+        {
+            "type": "select",
+            "id": "noticerDirection",
+            "label": "Scroll direction",
+            "default": "false",
+            "options": [
+                { "value": "false", "label": "Right to left" },
+                { "value": "true", "label": "Left to right" }
+            ]
+        },
+        {
+            "type": "select",
+            "id": "noticerSpeed",
+            "label": "Scroll speed",
+            "default": "0.60",
+            "options": [
+                { "value": "0.25", "label": "Slow" },
+                { "value": "0.60", "label": "Normal" },
+                { "value": "1", "label": "Fast" },
+                { "value": "2", "label": "Turbo" }
+            ]
+        },
+        {
+          "type": "header",
+          "content": "Appearance"
+        },
+        {
+          "type": "color",
+          "id": "noticerBg",
+          "label": "Background color",
+          "default": "#FFFFFF"
+        },
+        {
+          "type": "color",
+          "id": "noticerColor",
+          "label": "Text color",
+          "default": "#000000"
+        }
+    ]
+}
+{% endschema %}

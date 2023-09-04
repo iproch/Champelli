@@ -1,0 +1,101 @@
+{%- comment -%}
+	- Used: globally as "product card"
+	- Include: {%- render 'global-product-card' for product as product, class: your-class -%}
+	- Enclose in <x-grid>
+{%- endcomment -%}
+
+{%- liquid 
+	if settings.cardHoverImg == true and product.images[1] != nil
+		assign hasHoverImg = 'hasHover'
+	endif
+
+	# Used for image sizes
+	assign vw = 100 | divided_by: settings.cardGridCol | append: 'vw'
+	assign vw_s = 100 | divided_by: settings.cardGridCol-s | append: 'vw'
+-%}
+
+<x-cell class="{{ class }}" prod-instock="{{ product.available }}">
+{%- comment -%} Images {%- endcomment -%}
+	<div class="card-image">
+	<a href="{{ product.url }}" class="no-style">
+		<div class="card-aspect-ratio"></div>
+
+		<div class="primary">
+			{%- capture sizes -%}(max-width:777px) {{ vw_s }}, (min-width:778px) {{ vw }}, 100vw{%- endcapture -%}
+			{%- liquid
+				assign img = product.featured_image.src
+				assign alt = img.alt
+				assign widths = '450,550,750,950,1100,1280'
+
+				echo '<picture>'
+				echo img | image_url: width: 1280 | image_tag: sizes: sizes, widths: widths, loading: 'lazy', alt: alt | escape
+				echo '</picture>'
+			-%}
+		</div>
+
+		{%- if hasHoverImg == 'hasHover' -%}
+		<div class="secondary">
+			{%- liquid
+				assign img = product.images[1]
+
+				echo '<picture>'
+				echo img | image_url: width: 1280 | image_tag: sizes: sizes, widths: widths, loading: 'lazy', alt: alt | escape
+				echo '</picture>'
+			-%}
+		</div>
+		{%- endif -%}
+	</a>
+	</div>
+
+{%- comment -%} Meta data {%- endcomment -%}
+	<div class="card-meta">
+		<div class="card-head">
+		<x-grid columns-s="1">
+			<x-cell span="1-3">
+				<x-flex direction="column">
+					<x-cell>
+						<h2 class="card-title h4"><a href="{{ product.url }}" class="no-style">{{ product.title }}</a></h2>
+
+                      {%- comment -%} You can use this spot for badges, wishlist icons etc. {%- endcomment -%}
+
+					{%- comment -%} /-/ {%- endcomment -%}
+
+					{%- unless product.available -%}
+							<span class="product-badge soldout">({{ 'product.soldOut' | t }})</span>
+					{%- else -%}
+						{%- if product.compare_at_price > product.price -%}
+					    	<span class="product-badge sale">({{ 'product.sale' | t }})</span>
+						{%- elsif product.tags contains 'preorder' -%}
+					    	<span class="product-badge preorder">({{ 'product.preorder' | t }})</span>
+						{%- elsif product.tags contains 'new' -%}
+					    	<span class="product-badge new">({{ 'product.new' | t }})</span>
+						{%- endif -%}
+					{%- endunless -%}
+					</x-cell>
+					{%- if product.metafields.descriptors.subtitle.value != blank and settings.cardSubtitle == true -%}
+					<x-cell class="card-subtitle">
+						<h3 class="h4">{{ product.metafields.descriptors.subtitle.value }}</h3>
+					</x-cell>
+					{%- endif -%}
+					{%- if settings.cardMainPrice -%}
+					<x-cell class="card-price">{%- render 'global-product-price' for product as product -%}</x-cell>
+					{%- endif -%}
+				</x-flex>
+              <div class="card-badge text-end text-start-s">
+					
+				</div>
+			</x-cell>
+			<x-cell>
+				
+			</x-cell>
+		</x-grid>
+		</div>
+
+		{%- comment -%} Quick buy options {%- endcomment -%}
+		{%- if settings.cardQuickBuy == true -%}
+		<div class="card-footer">
+			{%- render 'global-product-form' for product as product -%}
+		</div>
+		{%- endif -%}
+	</div>
+</x-cell>

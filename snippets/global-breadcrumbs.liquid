@@ -1,0 +1,97 @@
+{%- if settings.showBreadcrumbs == true -%}
+
+{%- liquid 
+    if collection
+        assign genieCollection = collection
+    elsif product.collections[0]
+        assign genieCollection = product.collections[0]
+    else
+        assign genieCollection = false
+    endif
+
+
+    if routes.root_url == "/"
+        assign geniePathPrepend = routes.root_url
+    else
+        assign geniePathPrepend = routes.root_url | append: "/"
+    endif
+
+
+    if genieCollection 
+        assign geniePath = routes.collections_url | append: "/" | append: genieCollection.handle
+    else
+        assign geniePath = false
+    endif
+-%}
+
+{%- unless template == 'index' or template == 'cart' or template == 'list-collections' -%}
+<nav class="breadcrumb mob-scroller blockfader" role="navigation" aria-label="breadcrumbs">
+    <a href="{{ routes.root_url }}" title="{{ 'general.home' | t }}" class="no-style">{{ 'general.home' | t }}</a>
+
+{%- if template contains 'page' -%}
+
+    <span aria-hidden="true">&rsaquo;</span>
+    <span>{{ page.title }}</span>
+
+{%- elsif template contains 'product' -%}
+
+    {%- if collection.url -%}
+        <span aria-hidden="true">&rsaquo;</span>
+        {{ collection.title | link_to: collection.url }}
+    {%- else -%}
+        <span aria-hidden="true">&rsaquo;</span>
+        {%- if genieCollection -%}
+        <a href="{{ geniePath }}" class="no-style">{{ genieCollection.title }}</a>
+        {%- else -%}
+        <a href="{{ routes.all_products_collection_url }}" title="{{ 'general.products' | t }}" class="no-style">{{ 'general.products' | t }}</a>
+        {%- endif -%}
+    {%- endif -%}
+    <span aria-hidden="true">&rsaquo;</span>
+    <span>{{ product.title }}</span>
+
+{%- elsif template contains 'collection' and collection.handle -%}
+
+    <span aria-hidden="true">&rsaquo;</span>
+    {%- if current_tags -%}
+        {%- capture url -%}/collections/{{ collection.handle }}{%- endcapture -%}
+        {{ collection.title | link_to: url }}
+        <span aria-hidden="true">&rsaquo;</span>
+        <span>{{ current_tags | join: " + " }}</span>
+    {%- else -%}
+        <span>{{ collection.title }}</span>
+    {%- endif -%}
+
+{%- elsif template == 'blog' -%}
+
+    <span aria-hidden="true">&rsaquo;</span>
+    {%- if current_tags -%}
+        {{ blog.title | link_to: blog.url }}
+        <span aria-hidden="true">&rsaquo;</span>
+        <span>{{ current_tags | join: " + " }}</span>
+    {%- else -%}
+        <span>{{ blog.title }}</span>
+    {%- endif -%}
+
+{%- elsif template == 'article' -%}
+
+    <span aria-hidden="true">&rsaquo;</span>
+    {{ blog.title | link_to: blog.url }}
+    <span aria-hidden="true">&rsaquo;</span>
+    <span>{{ article.title }}</span>
+
+{%- elsif template == 'search' -%}
+
+    <span aria-hidden="true">&rsaquo;</span>
+    <a href="{{ routes.search_url }}" class="no-style">{{ 'search.search' | t }}</a>
+    <span aria-hidden="true">&rsaquo;</span>
+    <span>{{ page_title }}</span>
+
+{%- else -%}
+
+    <span aria-hidden="true">&rsaquo;</span>
+    <span>{{ page_title }}</span>
+
+{%- endif %}
+</nav>
+{%- endunless -%}
+{%- endif -%}

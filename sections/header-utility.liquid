@@ -1,0 +1,31 @@
+<x-flex direction="row" ai="center" jc="end" jc-s="center" style="gap:.5rem;--rowGap:0">
+	{%- render 'global-localization', position: 'Header'  -%}
+</x-flex>
+
+{% style %}
+.header-selectors { border-bottom: var(--globalBorder); padding: var(--margin) var(--buttonPadding) }
+.header-selectors .disclosure__list { z-index: 999 }
+.header-selectors button { padding: calc(var(--buttonPadding) / 2) var(--buttonPadding) }
+{%- endstyle -%}
+
+{% schema %}
+{
+  "name": "Selectors",
+  "class": "header-selectors",
+  "limit": 1,
+  "disabled_on": { "groups": ["header","footer","aside"] },
+  "presets": [ { "name": "Selectors" } ],
+  "settings": [
+    {
+        "type": "header",
+        "content": "Country/region selector",
+        "info": "To add a country/region, go to your [payment settings.](/admin/settings/payments)"
+    },
+    {
+        "type": "header",
+        "content": "Language selector",
+        "info": "To add a language, go to your [language settings.](/admin/settings/languages)"
+    }
+  ]
+}
+{% endschema %}

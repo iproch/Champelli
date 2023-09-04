@@ -1,0 +1,38 @@
+{%- comment -%}
+	- Used: globally as "product card"
+	- Include: {%- render 'global-collection-card', collection: collection, collectionCount: collectionCount, img: img, alt: alt -%}
+	- Enclose in <x-grid>
+{%- endcomment -%}
+
+{%- comment -%}
+	---[ Placehoder ]---
+{%- endcomment -%}
+
+{%- if placeholder == true -%}
+
+	{%- for i in (1..3) -%}
+		<x-cell>
+			<a href="#"><picture>{{ 'collection-1' | placeholder_svg_tag }}</picture></a>
+			<x-flex direction="row" jc="between" class="meta"><h4>Collection title</h4></x-flex>
+		</x-cell>
+	{%- endfor -%}
+
+{%- else -%}
+
+	<x-cell>
+		<a href="{{ collection.url }}" class="block no-style">
+			<picture>
+				{%- liquid
+					assign sizes = '(max-width: 777px) 100vw, (min-width: 778px) 33vw, 100vw'
+					assign widths = '550,750,950,1100'
+					echo img | image_url: width: 1100 | image_tag: sizes: sizes, widths: widths, loading: 'lazy', alt: alt | escape
+				-%}
+			</picture>
+
+			<x-flex direction="row" jc="between" class="meta">
+				<h4>{{ collection.title }}</h4>
+				{%- if collectionCount -%}<span>{{ collection.all_products_count }}</span>{%- endif -%}
+			</x-flex>
+		</a>
+	</x-cell>
+{%- endif -%}

@@ -1,0 +1,132 @@
+{%- liquid
+    assign collections = section.settings.collection_list
+    assign totalCollections = collections.count | plus: 0
+
+    assign collectionUrl = section.settings.url
+    assign collectionUrlLabel = section.settings.label
+
+    assign collectionTitle = section.settings.heading
+
+    assign collectionCount = section.settings.collectionCount
+-%}
+
+<section class="products product" {{ block.shopify_attributes }}>
+<h3 class="gs-title">{{ collectionTitle }}</h3>
+{%- liquid
+    assign scrollerState = section.settings.horizontalScroller
+
+    case scrollerState
+    when "desk"
+
+        assign horizontalScroll = nil
+        if totalCollections > 3
+            assign horizontalScroll = 'card scroll-snap'
+        endif
+
+    when "mob"
+        assign horizontalScroll = 'card scroll-snap-m'
+
+    when "both"
+
+        assign horizontalScroll = 'card scroll-snap-m'
+        if totalCollections > 3
+            assign horizontalScroll = 'card scroll-snap scroll-snap-m'
+        endif
+
+    else
+        assign horizontalScroll = nil
+    endcase
+-%}
+
+<x-grid 
+    class="cards {{ horizontalScroll }}"
+  {% if template == 'index'  %}
+    columns="2"
+  {% else %}  
+    columns="{{ settings.cardGridCol }}"
+  {% endif %}
+    columns-m="{{ settings.cardGridCol-m }}"
+    columns-s="{{ settings.cardGridCol-s }}"
+>
+{%- liquid
+if totalCollections == 0
+
+    render 'global-collection-card', placeholder: true
+
+else
+
+    for collection in collections
+        assign img = collection.image
+        assign alt = collection.title | escape
+    
+        if img == nil
+            assign img = collection.products.first
+            assign alt = collection.title | escape
+        endif
+
+        render 'global-collection-card', collection: collection, collectionCount: collectionCount, img: img, alt: alt, placeholder: false
+    endfor
+
+endif
+-%}
+</x-grid>
+
+{%- if collectionUrl != blank -%}
+<div class="loadmore"><a href="{{ collectionUrl }}" class="no-style">{{ collectionUrlLabel }}</a></div>
+{%- endif -%}
+</section>
+
+{% schema %}
+{
+  "name": "Featured collections",
+  "class": "feat-collections",
+  "disabled_on": { "groups": ["header", "footer", "aside"] },
+  "presets": [
+    { "name": "Featured collections" }
+  ],
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Featured collections"
+    },
+    {
+      "type": "url",
+      "id": "url",
+      "label": "Button link",
+      "info": "Leave blank to remove button."
+    },
+    {
+        "type": "text",
+        "id": "label",
+        "label": "Button label",
+        "default": "View all collections"
+    },
+    {
+        "type": "checkbox",
+        "id": "collectionCount",
+        "label": "Show collection product count",
+        "default": true
+    },
+    {
+      "type": "collection_list",
+      "id": "collection_list",
+      "label": "Collections",
+      "limit": 12
+    },
+    {
+        "type": "select",
+        "id": "horizontalScroller",
+        "label": "Enable horizontal scroll",
+        "default": "none",
+        "options": [
+            { "value": "none", "label": "None" },
+            { "value": "desk", "label": "Desktop" },
+            { "value": "mob", "label": "Mobile" },
+            { "value": "both", "label": "Desktop and mobile" }
+        ]
+    }
+  ]
+}
+{% endschema %}

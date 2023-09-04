@@ -1,0 +1,109 @@
+{%- comment -%}
+
+	Include:
+
+	{%- render 'global-localization', position: 'Footer' -%}
+
+{%- endcomment-%}
+
+{%- liquid 
+	assign position = position
+	assign countryForm = position | append: 'CountryForm'
+	assign countryFormNo = countryForm | append: 'NoScript'
+
+	assign languageForm = position | append: 'LanguageForm'
+	assign languageFormNo = languageForm | append: 'NoScript'
+-%}
+
+	{%- if localization.available_countries.size > 1 -%}
+	<x-cell class="qrrency">
+		<noscript>
+		{%- form 'localization', id: countryFormNo, class: 'localization-form' -%}
+			<x-flex direction="column" style="gap:.5rem">
+				<x-cell><h2 id="{{position}}CountryLabelNoScript" class="visually-hidden">{{ 'footer.countryLabel' | t }}</h2></x-cell>
+				<x-cell>
+					<select class="localization-selector link" name="country_code" aria-labelledby="{{position}}CountryLabelNoScript">
+						{%- for country in localization.available_countries -%}
+							<option value="{{ country.iso_code }}" {%- if country.iso_code == localization.country.iso_code %} selected{% endif %}>
+								{{ country.name }} ({{ country.currency.iso_code }} {{ country.currency.symbol }})
+							</option>
+						{%- endfor -%}
+					</select>
+				</x-cell>
+				<x-cell><button type="submit">{{ 'footer.updateCountry' | t }}</button></x-cell>
+			</x-flex>
+		{%- endform -%}
+		</noscript>
+
+		<localization-form>
+			{%- form 'localization', id: countryForm, class: 'localization-form' -%}
+			<div class="no-js-hidden">
+				<h2 class="h4 visually-hidden" id="{{position}}CountryLabel">{{ 'footer.countryLabel' | t }}</h2>
+				<div class="disclosure">
+					<button type="button" class="dropdown-caret disclosure__button" aria-expanded="false" aria-controls="{{position}}CountryList" aria-describedby="{{position}}CountryLabel">{{ localization.country.name }} ({{ localization.country.currency.iso_code }} {{ localization.country.currency.symbol }})</button>
+					<ul id="{{position}}CountryList" role="list" class="disclosure__list no-style" hidden>
+						{%- for country in localization.available_countries -%}
+							<li tabindex="-1">
+								<a 
+									class="{% if country.iso_code == localization.country.iso_code %}active{% endif %}"
+									href="#"{% if country.iso_code == localization.country.iso_code %}
+									aria-current="true"{% endif %} data-value="{{ country.iso_code }}"
+								>
+									{{ country.name }} <span class="currency">({{ country.currency.iso_code }} {{ country.currency.symbol }})</span>
+								</a>
+							</li>
+						{%- endfor -%}
+					</ul>
+				</div>
+				<input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
+			</div>
+			{%- endform -%}
+		</localization-form>
+	</x-cell>
+	{%- endif -%}
+
+	{%- if localization.available_languages.size > 1 -%}
+	<x-cell class="lang">
+		<noscript>&nbsp;</noscript>
+		<noscript>
+			{%- form 'localization', id: languageFormNo, class: 'localization-form' -%}
+			<x-flex direction="column" style="gap:.5rem">
+				<x-cell><h2 id="{{position}}LanguageLabel" class="visually-hidden">{{ 'footer.countryLabel' | t }}</h2></x-cell>
+				<x-cell>
+					<select class="localization-selector link" name="locale_code" aria-labelledby="{{position}}LanguageLabelNoScript">
+						{%- for language in localization.available_languages -%}
+							<option value="{{ language.iso_code }}" lang="{{ language.iso_code }}" {%- if language.iso_code == localization.language.iso_code %} selected{% endif %}>
+								{{ language.endonym_name | capitalize }}
+							</option>
+						{%- endfor -%}
+					</select>
+				</x-cell>
+				<x-cell><button type="submit">{{ 'footer.languageLabel' | t }}</button></x-cell>
+			</x-flex>
+			{%- endform -%}
+		</noscript>
+
+		<localization-form>
+			{%- form 'localization', id: languageForm, class: 'localization-form' -%}
+			<div class="no-js-hidden">
+				<h2 class="h4 visually-hidden" id="{{position}}LanguageLabel">{{ 'footer.languageLabel' | t }}</h2>
+				<div class="disclosure">
+					<button type="button" class="dropdown-caret disclosure__button" aria-expanded="false" aria-controls="{{position}}LanguageList" aria-describedby="{{position}}LanguageLabel">{{ localization.language.endonym_name | capitalize }}</button>
+						<ul id="{{position}}LanguageList" role="list" class="disclosure__list no-style" hidden>
+							{%- for language in localization.available_languages -%}
+							<li tabindex="-1">
+								<a class="{% if language.iso_code == localization.language.iso_code %}active{% endif %} focus-inset" href="#" hreflang="{{ language.iso_code }}" lang="{{ language.iso_code }}"{% if language.iso_code == localization.language.iso_code %} aria-current="true"{% endif %} data-value="{{ language.iso_code }}">
+		                          {{ language.endonym_name | capitalize }}
+		                      </a>
+		                  </li>
+		                  {%- endfor -%}
+		              </ul>
+		          </div>
+		          <input type="hidden" name="locale_code" value="{{ localization.language.iso_code }}">
+		      </div>
+			{%- endform -%}
+		</localization-form>
+	</x-cell>
+	{%- endif -%}
+
+<script type="module" src="{{ 'localization.js' | asset_url }}" async></script>

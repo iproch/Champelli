@@ -1,0 +1,29 @@
+{%- liquid 
+# Getting aspect ratio of image
+	if img.width > img.height
+		assign imgOrientation = 'landscape'
+	elsif img.width < img.height
+		assign imgOrientation = 'portrait'
+	else 
+		assign imgOrientation = 'square'
+	endif
+
+# lazy-loading this image?
+	if lazyload == true
+		assign lazy = 'lazy'
+	else 
+		assign lazy = 'auto'
+	endif
+
+
+if widths == nil
+	assign widths = '550,750,950,1100,1280,1426'
+endif
+
+if sizes == nil
+	assign sizes = nil
+endif
+
+# Print the image
+	echo img | image_url: width: 1426 | image_tag: sizes: sizes, widths: widths, loading: lazy, alt: alt, data-orientation: imgOrientation
+-%}

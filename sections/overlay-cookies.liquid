@@ -1,0 +1,64 @@
+<div id="cookies-banner" style="--cookieColor:{{ section.settings.cookieColor }};--cookieBg:{{ section.settings.cookieBg }};--cookieButtonBg:{{ section.settings.cookieButtonBg }};--cookieButtonColor:{{ section.settings.cookieButtonColor }}">
+    <x-grid columns="2" columns-s="1" style="gap:var(--margin)">
+        <x-cell span="row">{{ section.settings.cookieCompliance }}</x-cell>
+        <x-cell><button style="--buttonBorderColor:transparent;--buttonBorderHover:transparent;--buttonBgColor:transparent; --buttonColor: currentColor" onclick="handleDecline()">{{ 'cookies.decline' | t }}</button></x-cell>
+        <x-cell><button onclick="handleAccept()">{{ 'cookies.accept' | t }}</button></x-cell>
+    </x-grid>
+</div>
+
+<script>function getBannerEl(){return document.getElementById("cookies-banner")}function hideBanner(n){getBannerEl().style.display="none"}function showBanner(){getBannerEl().style.display="block"}function handleAccept(n){window.Shopify.customerPrivacy.setTrackingConsent(!0,hideBanner),document.addEventListener("trackingConsentAccepted",function(){console.log("trackingConsentAccepted event fired")})}function handleDecline(){window.Shopify.customerPrivacy.setTrackingConsent(!1,hideBanner)}function initCookieBanner(){const n=window.Shopify.customerPrivacy.userCanBeTracked(),e=window.Shopify.customerPrivacy.getTrackingConsent();n||"no_interaction"!==e||showBanner()}window.Shopify.loadFeatures([{name:"consent-tracking-api",version:"0.1"}],function(n){if(n)throw n;initCookieBanner()});</script>
+
+{%- if request.design_mode -%}<script>document.addEventListener("DOMContentLoaded", (e) => { hideBanner() });document.addEventListener("shopify:section:select", (e) => { const blockSelected = e.target.classList.contains('cookies-overlay'); if (blockSelected) { showBanner() } });document.addEventListener("shopify:section:deselect", (e) => { const blockSelected = e.target.classList.contains('cookies-overlay'); if (blockSelected) { hideBanner() } });</script>{%- endif -%}
+
+{% schema %}
+{
+    "name": "Cookies",
+    "class": "cookies-overlay",
+    "limit": 1,
+    "enabled_on": { "groups": ["aside"] },
+    "settings": [
+      {
+        "type": "header",
+        "content": "Banner",
+        "info": "For this banner to work you need to first activate customer privacy through Shopify admin [Online store > Preferences > Customer privacy](https://www.shopify.com/admin/online_store/preferences)"
+      },
+      {
+        "type": "richtext",
+        "id": "cookieCompliance",
+        "label": "Description",
+        "default": "<p>We use cookies to ensure you get the best experience on our website.</p>"
+      },
+      {
+        "type": "header",
+        "content": "Appearance"
+      },
+      {
+        "type": "color",
+        "id": "cookieBg",
+        "label": "Background color",
+        "default": "#FFFFFF"
+      },
+      {
+        "type": "color",
+        "id": "cookieColor",
+        "label": "Text color",
+        "default": "#000000"
+      },
+      {
+        "type": "color",
+        "id": "cookieButtonBg",
+        "label": "Button background color",
+        "default": "#000000"
+      },
+      {
+        "type": "color",
+        "id": "cookieButtonColor",
+        "label": "Button text color",
+        "default": "#FFFFFF"
+      }
+    ],
+    "presets": [
+        { "name": "Cookies" }
+    ]
+}
+{% endschema %}

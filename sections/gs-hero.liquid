@@ -1,0 +1,352 @@
+{%- liquid
+    assign isImageFirst = false
+    assign isVideoFirst = false
+    assign isVideoExternalFirst = false
+
+    for block in section.blocks
+    case block.type
+    when 'image'
+        if forloop.first == true
+            assign isImageFirst = true
+            assign blockName = nil
+        endif
+    when 'video'
+        if forloop.first == true
+            assign isVideoFirst = true
+            assign blockName = 'html5video'
+            if section.settings.cropVideo
+                assign videoHeight = '--vidCropO:hidden;--vidCropH:var(--heroHeight);'
+            else
+                assign videoHeight = nil
+            endif
+        endif
+    when 'video_external'
+        if forloop.first == true
+            assign isVideoExternalFirst = true
+            assign blockName = 'externalvideo'
+        endif
+    endcase
+    endfor
+-%}
+
+<section class="hero {{ blockName }}" style="--heroMetaH1Bg:{{ section.settings.heroMetaH1Bg }};--heroMetaH1Color:{{ section.settings.heroMetaH1Color }};--heroHeight:{{ section.settings.heroHeight }};{{ videoHeight }}" {{ block.shopify_attributes }}>
+
+{% for block in section.blocks %}
+{%- case block.type -%}
+{%- when 'image' -%}
+
+    {%- if isImageFirst -%}
+    {%- if block.settings.imgClickable and section.settings.url != empty %}<a href="{{ section.settings.url }}" class="no-style">{% endif -%}
+    <picture>
+        {%- assign imgMobile = block.settings.imageMobile -%}
+        {%- assign imgDesktop = block.settings.image -%}
+
+        {%- if imgDesktop != nil or imgMobile != nil -%}
+        {%- if imgMobile != nil -%}<source media="(max-width:777px)" srcset="{{ imgMobile | image_url }}">{%- endif -%}
+        {%- if imgDesktop != nil -%}<source media="(min-width:778px)" srcset="{{ imgDesktop | image_url }}">{%- endif -%}
+        {%- render 'global-img' img: imgDesktop, alt: section.settings.title, lazyload: section.settings.lazyload -%}
+        {%- else -%}
+        {{ 'lifestyle-1' | placeholder_svg_tag: 'svg-placeholder' }}
+        {%- endif -%}
+    </picture>
+    {%- if block.settings.imgClickable and section.settings.url != empty -%}</a>{%- endif -%}
+    {%- endif -%}
+
+{%- when 'video' -%}
+    {%- if isVideoFirst -%}
+    {%- liquid
+        if block.settings.video != nil
+            assign uniqueId = block.settings.video.id
+            assign playerId = uniqueId
+            assign videoPoster = block.settings.video.preview_image | image_url: width: 1500     
+        else
+            assign uniqueId = section.id | remove: '-' | remove: '_'
+            assign playerId = uniqueId | split: "_" | last
+        endif
+    -%}
+
+    {%- if block.settings.video != nil -%}
+        <video
+            id="video-{{ uniqueId }}"
+            controls
+            crossorigin 
+            playsinline 
+            {% if block.settings.videoLoop == true %}loop{% endif %}
+            {% if block.settings.videoAutoplay == true %}autoplay{% endif %}
+            {% if block.settings.videoMute == true %}muted{% endif %}
+            poster="{{ videoPoster }}"
+            {%- if section.settings.lazyload -%}loading="lazy"{%- endif-%}
+        >
+            {%- for video in block.settings.video.sources -%}
+                <source src="{{ video.url }}" type="{{ video.mime_type }}">
+            {%- endfor -%}
+        </video>
+    {%- else -%}
+        <picture>{{ 'lifestyle-1' | placeholder_svg_tag: 'svg-placeholder' }}</picture>
+    {%- endif -%}
+
+    {{ 'plyr.min.css' | asset_url | stylesheet_tag }}
+    <script type="module" src="{{ 'plyr.min.js' | asset_url }}"></script>
+    <style>.plyr__video-wrapper{max-height:100vh}</style>
+    <script>const player{{ playerId }} = new Plyr('#video-{{ uniqueId }}', { controls: ['play-large'] }); window.player = player{{ playerId }}</script>
+    {%- endif -%}
+{%- endcase -%}
+{%- endfor -%}
+
+    <div class="meta" {%- if section.settings.imgClickable and section.settings.url != empty -%}style="pointer-events:none"{%- endif -%}>
+    	<x-flex class="box" pi="{{ section.settings.contentPosition }}" pi-s="{{ section.settings.contentPositionMob }}" orientation="{{ section.settings.contentDirection }}" orientation-s="{{ section.settings.contentDirectionMob }}">
+            <x-cell class="content">
+                <x-flex direction="{{ section.settings.contentDirection }}" direction-s="{{ section.settings.contentDirectionMob }}" ai="{{ section.settings.textAlignment }}" ai-s="{{ section.settings.textAlignmentMob }}" style="gap:var(--padding)"> 
+                    <x-cell>
+                        {%- if section.settings.title != empty -%}<h2 {% if section.settings.heroMetaH1hasBg == true %}class="hasBg"{% endif %}>{{ section.settings.title }}</h2>{%- endif -%}
+                        {%- if section.settings.content != empty -%}<p {% if section.settings.heroMetaH1hasBg == true %}class="hasBg"{% endif %}>{{ section.settings.content }}</p>{%- endif -%}
+                    </x-cell>
+                    <x-cell>{%- if section.settings.cta != empty -%}<a href="{{ section.settings.url }}" class="button is-customized">{{ section.settings.cta }}</a>{%- endif -%}</x-cell>
+                </x-flex>
+            </x-cell>
+    	</x-flex>
+    </div>
+</section>
+
+{% schema %}
+    {
+      "name": "Hero banner",
+      "max_blocks": 2,
+      "disabled_on": { "groups": ["header", "footer", "aside"] },
+      "settings": [
+        {
+            "type": "header",
+            "content": "Notice",
+            "info": "This section supports images and self-hosted videos. To switch between image and video blocks, first remove the block you're currently using."
+        },
+        {
+          "type": "header",
+          "content": "Content"
+        },
+        {
+          "type": "select",
+          "id": "heroHeight",
+          "label": "Banner height",
+          "default": "var(--heroHeight-f)",
+          "options": [
+            { "value": "var(--heroHeight-s)", "label": "Small" },
+            { "value": "var(--heroHeight-m)", "label": "Medium" },
+            { "value": "var(--heroHeight-l)", "label": "Large" },
+            { "value": "var(--heroHeight-f)", "label": "Full" }
+          ]
+        },
+        {
+            "type": "checkbox",
+            "id": "cropVideo",
+            "label": "Crop video height",
+            "info": "If enabled and the video is too tall, the video will be cropped and the banner height will reflect the size you selected in the option above.",
+            "default": false
+        },
+        {
+          "type": "checkbox",
+          "id": "lazyload",
+          "label": "Enable lazy-loading",
+          "default": true,
+          "info": "Disable only in case this section is above the fold."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Heading",
+          "default": "Hero heading",
+          "info": "Leave blank to hide heading."
+        },
+        {
+          "type": "text",
+          "id": "content",
+          "label": "Subheading"
+        },
+        {
+          "type": "text",
+          "id": "cta",
+          "label": "Button label",
+          "default": "Shop more",
+          "info": "Leave blank to hide button."
+        },
+        {
+          "type": "url",
+          "id": "url",
+          "label": "Button link"
+        },
+        {
+            "type": "select",
+            "id": "contentPosition",
+            "label": "Content position - desktop",
+            "default": "center between",
+            "options": [
+                { "value": "top left", "label": "Top left" },
+                { "value": "top center", "label": "Top center" },
+                { "value": "top right", "label": "Top right" },
+                { "value": "center left", "label": "Middle Left" },
+                { "value": "center", "label": "Middle Center" },
+                { "value": "center right", "label": "Middle Right" },
+                { "value": "bottom left", "label": "Bottom left" },
+                { "value": "bottom center", "label": "Bottom center" },
+                { "value": "bottom right", "label": "Bottom right" },
+                { "value": "top between", "label": "Top space-between" },
+                { "value": "center between", "label": "Middle space-between" },
+                { "value": "bottom between", "label": "Bottom space-between" }
+            ]
+        },
+        {
+            "type": "select",
+            "id": "contentDirection",
+            "label": "Content direction - desktop",
+            "default": "row",
+            "options": [
+                { "value": "row", "label": "Row" },
+                { "value": "column", "label": "Column" }
+            ]
+        },
+        {
+            "type": "select",
+            "id": "textAlignment",
+            "label": "Text alignment - desktop",
+            "default": "start",
+            "options": [
+                { "value": "start", "label": "Left" },
+                { "value": "center", "label": "Center" },
+                { "value": "end", "label": "Right" }
+            ]
+        },
+        {
+            "type": "select",
+            "id": "contentPositionMob",
+            "label": "Content position - mobile",
+            "default": "center between",
+            "options": [
+                { "value": "top center", "label": "Top" },
+                { "value": "center", "label": "Middle" },
+                { "value": "bottom center", "label": "Bottom" },
+                { "value": "center between", "label": "Space between" }
+            ]
+        },
+        {
+            "type": "select",
+            "id": "contentDirectionMob",
+            "label": "Content direction - mobile",
+            "default": "column",
+            "options": [
+                { "value": "row", "label": "Row" },
+                { "value": "column", "label": "Column" }
+            ]
+        },
+        {
+            "type": "select",
+            "id": "textAlignmentMob",
+            "label": "Text alignment - mobile",
+            "default": "center",
+            "options": [
+                { "value": "start", "label": "Left" },
+                { "value": "center", "label": "Center" },
+                { "value": "end", "label": "Right" }
+            ]
+        },
+        {
+          "type": "header",
+          "content": "Appearance"
+        },
+        {
+          "type": "color",
+          "id": "heroMetaH1Bg",
+          "label": "Background color",
+          "default": "#FFFFFF"
+        },
+        {
+          "type": "color",
+          "id": "heroMetaH1Color",
+          "label": "Text color",
+          "default": "#000000"
+        },
+        {
+          "type": "checkbox",
+          "id": "heroMetaH1hasBg",
+          "label": "Enable heading background",
+          "default": false
+        }
+      ],
+      "blocks": [
+        {
+          "type": "image",
+          "name": "Image",
+          "limit": 1,
+          "settings": [
+            {
+                "type": "header",
+                "content": "Notice",
+                "info": "To use to the video block, remove this block first."
+            },
+            {
+              "type": "image_picker",
+              "id": "image",
+              "label": "Desktop",
+              "info": "2000 x 1110px recommended"
+            },
+            {
+              "type": "image_picker",
+              "id": "imageMobile",
+              "label": "Mobile",
+              "info": "970 x 1110px recommended"
+            },
+            {
+              "type": "checkbox",
+              "id": "imgClickable",
+              "label": "Clickable image",
+              "default": false
+            }
+          ]
+        },
+        {
+          "type": "video",
+          "name": "Video",
+          "limit": 1,
+          "settings": [
+            {
+                "type": "header",
+                "content": "Notice",
+                "info": "To use to the image block, remove this block first."
+            },
+            {
+                "type": "video",
+                "id": "video",
+                "label": "Video",
+                "info": "Videos with a 16:9 aspect ratio are recommended."
+            },
+            {
+                "type": "checkbox",
+                "id": "videoLoop",
+                "label": "Loop",
+                "default": false
+            },
+            {
+                "type": "checkbox",
+                "id": "videoMute",
+                "label": "Mute",
+                "default": true
+            },
+            {
+                "type": "checkbox",
+                "id": "videoAutoplay",
+                "label": "Autoplay",
+                "default": false,
+                "info": "Autoplay is not recommended. It is not supported on mobile devices and disabled by default in many browsers."
+            }
+          ]
+        }
+      ],
+      "presets": [
+        {
+          "name": "Hero banner",
+          "category": "Image",
+          "blocks": [
+            { "type": "image" }
+          ]
+        }
+      ]
+    }
+{% endschema %}

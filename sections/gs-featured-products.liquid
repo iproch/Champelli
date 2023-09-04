@@ -1,0 +1,110 @@
+{%- liquid
+    assign collection = section.settings.product_list
+    assign totalProducts = collection.count | plus: 0
+
+    assign collectionUrl = section.settings.url
+
+    if section.settings.heading != blank
+        assign collectionTitle = section.settings.heading
+    else 
+        assign collectionTitle = 'collection.featuredProducts' | t
+    endif
+-%}
+
+<section class="products product" {{ block.shopify_attributes }}>
+<h3 class="gs-title">{{ collectionTitle }}</h3>
+{%- liquid
+    assign scrollerState = section.settings.horizontalScroller
+
+    case scrollerState
+    when "desk"
+
+        assign horizontalScroll = nil
+        if totalProducts > 3
+            assign horizontalScroll = 'card scroll-snap'
+        endif
+
+    when "mob"
+        assign horizontalScroll = 'card scroll-snap-m'
+
+    when "both"
+
+        assign horizontalScroll = 'card scroll-snap-m'
+        if totalProducts > 3
+            assign horizontalScroll = 'card scroll-snap scroll-snap-m'
+        endif
+
+    else 
+        assign horizontalScroll = nil
+    endcase
+-%}
+<x-grid 
+    class="cards {{ horizontalScroll }}"
+    columns="{{ settings.cardGridCol }}"
+    columns-m="{{ settings.cardGridCol-m }}"
+    columns-s="{{ settings.cardGridCol-s }}"
+    card-type="{{ settings.cardTypeOf }}"
+    card-ratio="{{ settings.cardRatio }}"
+    card-quickbuy="{{ settings.cardQuickBuy }}"
+    card-quickbuy-hover="{{ settings.cardHoverQuickBuy }}"
+    card-quickbuy-float="{{ settings.cardFloatQuickBuy }}"
+    card-img-crop="{{ settings.cardImgCrop }}"
+    card-img-radius="{{ settings.cardImgRadius }}"
+    card-img-padding="{{ settings.cardImgPadding }}"
+>
+{%- liquid
+    for product in collection
+        render "global-product-card" for product as product
+    else 
+        # If no products in store show placeholder x3
+        for i in (1..3)
+            render "global-product-card-placeholder"
+        endfor
+    endfor
+-%}
+
+</x-grid>
+{%- if collectionUrl != blank -%}
+<div class="loadmore"><a href="{{ collectionUrl }}" class="no-style">{{ 'collection.ViewAllProducts' | t }}</a></div>
+{%- endif -%}
+</section>
+
+{% schema %}
+{
+  "name": "Featured products",
+  "disabled_on": { "groups": ["header", "footer", "aside"] },
+  "presets": [
+    { "name": "Featured products" }
+  ],
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading"
+    },
+    {
+      "type": "url",
+      "id": "url",
+      "label": "Button link"
+    },
+    {
+      "type": "product_list",
+      "id": "product_list",
+      "label": "Products",
+      "limit": 12
+    },
+    {
+        "type": "select",
+        "id": "horizontalScroller",
+        "label": "Enable horizontal scroll",
+        "default": "none",
+        "options": [
+            { "value": "none", "label": "None" },
+            { "value": "desk", "label": "Desktop" },
+            { "value": "mob", "label": "Mobile" },
+            { "value": "both", "label": "Desktop and mobile" }
+        ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,111 @@
+{%- if section.settings.marqueeText != blank -%}
+<section class="marquee marqid-{{ section.id }}" style="--marqueeBg:{{ section.settings.marqueeBg }};--marqueeColor:{{ section.settings.marqueeColor }}; --marqueeTextFontSize:{{ section.settings.size }}px; --marqueeTextFontSizeMob:{{ section.settings.sizeMob }}px" {{ block.shopify_attributes }}>
+    <div class="inline marquee3k" {% if section.settings.marqueeDirection == "true" %}data-reverse="true"{% endif %} data-speed="{{ section.settings.marqueeSpeed }}" data-pausable="true">
+        <span>
+        {%- if section.settings.marqueeLink != blank -%}<a href="{{ section.settings.marqueeLink }}" class="no-style">{%- endif -%}
+            <x-flex ai="center" jc="center" style="gap:var(--marqueeLateralSpace)">
+                <x-cell>{{ section.settings.marqueeText }}</x-cell> 
+                {%- if section.settings.image -%}<x-cell>{{ section.settings.image | image_url: height: 65 | image_tag: srcset: nil, loading: 'lazy' }}</x-cell>{%- endif -%}
+            </x-flex>
+        {%- if section.settings.marqueeLink != blank -%}</a>{%- endif -%}
+        </span>
+    </div>
+</section>
+
+<script>{%- if request.design_mode -%}document.addEventListener("shopify:section:load", (e) => { if (document.getElementById(`shopify-section-${e.detail.sectionId}`).classList.contains('marquee-walker')) { Marquee3k.init() } }); {%- endif -%}document.addEventListener("DOMContentLoaded", (e) => { Marquee3k.init() });</script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Moving text",
+  "disabled_on": { "groups": ["header", "footer", "aside"] },
+  "class": "marquee-walker",
+  "presets": [
+    {
+      "name": "Moving text",
+      "category": "marquee"
+    }
+  ],
+  "settings": [
+    {
+      "type": "text",
+      "id": "marqueeText",
+      "label": "Text",
+      "default": "Announce something here"
+    },
+    {
+        "type": "image_picker",
+        "id": "image",
+        "label": "Image icon",
+        "info": "60 x 60 px recommended"
+    },
+    {
+      "type": "url",
+      "id": "marqueeLink",
+      "label": "Link"
+    },
+    {
+        "type": "select",
+        "id": "marqueeDirection",
+        "label": "Scroll direction",
+        "default": "false",
+        "options": [
+            { "value": "false", "label": "Right to left" },
+            { "value": "true", "label": "Left to right" }
+        ]
+    },
+    {
+        "type": "select",
+        "id": "marqueeSpeed",
+        "label": "Scroll speed",
+        "default": "0.60",
+        "options": [
+            { "value": "0.25", "label": "Slow" },
+            { "value": "0.60", "label": "Normal" },
+            { "value": "1", "label": "Fast" },
+            { "value": "2", "label": "Turbo" }
+        ]
+    },
+    {
+      "type": "header",
+      "content": "Text"
+    },
+    {
+      "type": "range",
+      "id": "size",
+      "label": "Font size on desktop",
+      "min": 10,
+      "max": 109,
+      "step": 1,
+      "unit": "px",
+      "default": 26
+    },
+    {
+      "type": "range",
+      "id": "sizeMob",
+      "label": "Font size on mobile",
+      "min": 10,
+      "max": 70,
+      "step": 1,
+      "unit": "px",
+      "default": 17
+    },
+    {
+      "type": "header",
+      "content": "Appearance"
+    },
+    {
+      "type": "color",
+      "id": "marqueeBg",
+      "label": "Background color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "marqueeColor",
+      "label": "Text color",
+      "default": "#000000"
+    }
+  ]
+}
+{% endschema %}
