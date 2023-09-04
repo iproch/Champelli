@@ -18,7 +18,11 @@
 <x-grid class="actions" columns="2">
 	{%- comment -%} Variant select {%- endcomment -%}
 	<x-cell class="select {% if product.variants.size == 1 %}hidden{%endif%}">
+      <div class="dropdown-icon">
+            ▼
+          </div>
 		<select name="id" class="productSelect" onchange="selectOptions(this,{{ product.id }})">
+          
 		{%- for variant in product.variants -%}
 		{%- if variant.available -%}
 		{%- assign featImg = product.selected_or_first_available_variant.featured_image | default: product.featured_image -%}
@@ -26,8 +30,9 @@
 				data-option="{{ variant.title }}"
 				data-price="{{ variant.price | money }}"
 				{% if variant == product.selected_or_first_available_variant %} selected{% endif %}>{{ variant.title }}{% if settings.cardQuickBuySelectPrice %} - {{ variant.price | money_with_currency }}{% endif %}
-			▼
+			
             </option>
+          
 		{%- else -%}
 			<option disabled>{{ variant.title }} - {{ 'product.soldOut' | t }}</option>
 		{%- endif -%}

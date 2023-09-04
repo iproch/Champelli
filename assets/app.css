@@ -3512,3 +3512,14 @@ ul.ga-products-table > li .product_main input {
 .card-title.h4 {
   text-transform: capitalize !important;
 }
+.dropdown-icon {
+  position: absolute;
+  top: 5%;
+  right: 15%;
+}
+@media (max-width: 739px) {
+  .dropdown-icon {
+    top: 25%;
+    right: 75%;
+  }
+}
